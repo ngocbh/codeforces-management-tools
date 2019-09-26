@@ -1,7 +1,7 @@
 # codeforces-standings-crawler
 
 ### Requirements
-Python3, pip. To install requirements
+```python3``` (or ```python```), ```pip```. To install requirements
 
 ```
 pip install -r requirements.txt
@@ -16,8 +16,13 @@ python3 crawl.py
 Parameters:
 
 ```
-URL='https://codeforces.com/group/Ir5CI6f3FD/contest/251769/standings' #link to contest standings
+#link to contest standings
+URL='https://codeforces.com/group/Ir5CI6f3FD/contest/251769/standings' 
 
-USER_FORMAT=r'^44' # filter for each class . r'.*' for all participant.
+# filter for each class . r'.*' for all participant.
+USER_FORMAT=r'^44' 
+
+#output file
+OUTPUT_FILE='data/standings.csv'
 
 ```

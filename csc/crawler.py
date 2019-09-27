@@ -5,10 +5,12 @@ from pyquery import PyQuery as pq
 import requests
 import pandas as pd
 import re
+import time
 
 CODEFORCES_URI='https://codeforces.com'
 
 CRAWLED=set()
+s = requests.Session()
 
 def get_pages(doc):
 	page_links = []
@@ -44,7 +46,7 @@ def regex_filter(val, regex):
 		return False
 
 def crawl_participant(URL, data, column_names):
-	response = requests.get(URL)
+	response = s.get(URL)
 	doc = pq(response.text)
 	table = doc('div').filter('.datatable')
 
@@ -60,7 +62,10 @@ def crawl_participant(URL, data, column_names):
 				data.append(row_data)
 
 	print('Crawled page: {}'.format(URL))
+	print('Time to sleep 3s')
+	time.sleep(3)
 	CRAWLED.add(URL)
+
 	page_links = get_pages(doc)
 	for link in page_links:
 		url = '{}{}'.format(CODEFORCES_URI, link)
@@ -68,9 +73,10 @@ def crawl_participant(URL, data, column_names):
 			crawl_participant(url, data, column_names)
 
 def crawl_standings(URL, filepath, user_format=r'.*'):
+	print('Crawling : {}'.format(URL))
 	data  = []
 	column_names = []
-	response = requests.get(URL)
+	response = s.get(URL, verify=False)
 	doc = pq(response.text)
 	row = doc('div').filter('.datatable').find('tr')
 	column_names = parse_column_names(doc(row[0]))
@@ -82,7 +88,7 @@ def crawl_standings(URL, filepath, user_format=r'.*'):
 	df.sort_values(by=['#'])
 	df = df[df.Who.apply(lambda x: True if re.search(user_format,x) else False)]
 
-	df.to_csv(filepath)
+	df.to_csv(filepath, index=False)
 	print('Done!! {}'.format(filepath))
 
 

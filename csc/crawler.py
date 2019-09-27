@@ -1,4 +1,5 @@
-from utils import *
+from __future__ import absolute_import
+from .utils import *
 from pyquery import PyQuery as pq
 
 import requests
@@ -58,12 +59,13 @@ def crawl_participant(URL, data, column_names):
 			else:
 				data.append(row_data)
 
+	print('Crawled page: {}'.format(URL))
 	CRAWLED.add(URL)
 	page_links = get_pages(doc)
 	for link in page_links:
 		url = '{}{}'.format(CODEFORCES_URI, link)
 		if url not in CRAWLED:
-			crawl_standings(url)
+			crawl_participant(url, data, column_names)
 
 def crawl_standings(URL, filepath, user_format=r'.*'):
 	data  = []

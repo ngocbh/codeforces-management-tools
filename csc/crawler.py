@@ -62,8 +62,8 @@ def crawl_participant(URL, data, column_names):
 				data.append(row_data)
 
 	print('Crawled page: {}'.format(URL))
-	print('Time to sleep 3s')
-	time.sleep(3)
+	print('Time to sleep 0.5s')
+	time.sleep(0.5)
 	CRAWLED.add(URL)
 
 	page_links = get_pages(doc)
@@ -76,7 +76,7 @@ def crawl_standings(URL, filepath, user_format=r'.*'):
 	print('Crawling : {}'.format(URL))
 	data  = []
 	column_names = []
-	response = s.get(URL, verify=False)
+	response = s.get(URL)
 	doc = pq(response.text)
 	row = doc('div').filter('.datatable').find('tr')
 	column_names = parse_column_names(doc(row[0]))

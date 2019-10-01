@@ -85,8 +85,11 @@ def crawl_standings(URL, filepath, user_format=r'.*'):
 
 	df = pd.DataFrame(data, columns=column_names)
 	df.Who.unique()
-	df.sort_values(by=['#'])
+	df = df.drop_duplicates()
+
+	df = df.sort_values(by=['#'])
 	df = df[df.Who.apply(lambda x: True if re.search(user_format,x) else False)]
+	
 
 	df.to_csv(filepath, index=False)
 	print('Done!! {}'.format(filepath))

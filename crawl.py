@@ -21,7 +21,8 @@ URLS = [
 'http://codeforces.com/group/Ir5CI6f3FD/contest/256575/standings',
 'http://codeforces.com/group/Ir5CI6f3FD/contest/255647/standings',
 'http://codeforces.com/group/Ir5CI6f3FD/contest/255622/standings',
-'http://codeforces.com/group/Ir5CI6f3FD/contest/255273/standings'
+'http://codeforces.com/group/Ir5CI6f3FD/contest/255273/standings',
+'https://codeforces.com/group/Ir5CI6f3FD/contest/251769/standings'
 ]
 
 # filter for each class . use r'.*' for all participants.

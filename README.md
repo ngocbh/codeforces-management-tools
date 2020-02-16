@@ -92,8 +92,8 @@ ss = conmato.CSession()
 # use your account and turn on manage permission for all contests that you want to crawl standings
 ss.login('********','********')
 
-conmato.check_plagiarism(ss, contestID)
-# conmato.crawl_checked_standings(ss, contestID)
+# conmato.check_plagiarism(ss, contestID)
+conmato.crawl_checked_standings(ss, contestID)
 ```
 
 

@@ -1,5 +1,4 @@
 # codeforces-management-tools
-A simple tool help:
 * Crawl Codeforces's standings.
 * Check plagiarism.
 * Create new standings that have plagiarism test.

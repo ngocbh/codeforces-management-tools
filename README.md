@@ -1,25 +1,30 @@
-# codeforces-standings-crawler
+# codeforces-management-tools
+A simple tool help:
+* Crawl Codeforces's standings.
+* Check plagiarism.
+* Create new standings that have plagiarism test.
 
+Check document in vietnamese [here](https://github.com/ngocjr7/codeforces-management-tools/blob/master/README-vi.md)
 ### Requirements
 ```python3``` (or ```python```), ```pip```. To install requirements
 
-```
+```shell
 pip install -r requirements.txt
 ```
 
-### How to run
+### How to crawl standings
 
+```shell
+python3 crawl_original_standings.py
 ```
-python3 crawl.py
-```
+The results will be stored in ```data/results```
+Change parameters in crawl_original_standings.py:
 
-Change parameters in crawl.py:
-
-```
+```python
 # List url of contests
 URLS = [
-'http://codeforces.com/group/Ir5CI6f3FD/contest/263142/standings',
-'http://codeforces.com/group/Ir5CI6f3FD/contest/261501/standings',
+'263142',
+'261501'
 ]
 
 # filter for each class . use r'.*' for all participants.
@@ -31,8 +36,8 @@ PENALTY=True
 
 # username and password of an admin in codeforces group
 # use your account and turn on manage permission for all contests that you want to crawl standings
-USERNAME='74164707NgocBH'
-PASSWORD='123456789'
+USERNAME='********'
+PASSWORD='********'
 
 # directory of output file
 WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -43,3 +48,52 @@ csc.login(USERNAME,PASSWORD)
 csc.qcrawl(URLS, USER_FORMAT, PENALTY, OUTDIR)
 
 ```
+
+### How to check plagiarism
+
+```shell
+python3 check_plagiarism.py
+```
+The results will be stored in ```data/report/contestID```
+Change parameters in check_plagiarism.py:
+
+```python
+import conmato
+
+contestID = '257806' # the contestID which you need to check
+
+ss = conmato.CSession()
+
+# username and password of an admin in codeforces group
+# use your account and turn on manage permission for all contests that you want to crawl standings
+ss.login('********','********')
+
+conmato.check_plagiarism(ss, contestID)
+# conmato.crawl_checked_standings(ss, contestID)
+```
+
+
+### How to create new standings.
+
+```shell
+python3 crawl_checked_standings.py.py
+```
+The results will be stored in ```data/report/contestID```
+Change parameters in crawl_checked_standings.py:
+
+```python
+import conmato
+
+contestID = '257806' # the contestID which you need to check
+
+ss = conmato.CSession()
+
+# username and password of an admin in codeforces group
+# use your account and turn on manage permission for all contests that you want to crawl standings
+ss.login('********','********')
+
+conmato.check_plagiarism(ss, contestID)
+# conmato.crawl_checked_standings(ss, contestID)
+```
+
+

@@ -1,3 +1,12 @@
 requests
 pyquery
 pandas
+mosspy
+pydot
+Faker
+html5lib
+ipython
+pydot
+pyparsing
+six
+graphviz

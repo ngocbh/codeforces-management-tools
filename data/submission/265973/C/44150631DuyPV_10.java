@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 n = int(input())
 
 def f(n):
@@ -7,4 +8,15 @@ def f(n):
 		return 4
 	return f(n-1)*3
 
+=======
+n = int(input())
+
+def f(n):
+	if n == 1:
+		return 1
+	if n == 2:
+		return 4
+	return f(n-1)*3
+
+>>>>>>> Stashed changes
 print(f(n))			

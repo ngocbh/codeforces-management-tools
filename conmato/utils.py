@@ -44,6 +44,11 @@ def get_contest_id(url):
 	else:
 		raise Exception('An error occur when getting contest id')
 
+def decode(s):
+	ret = ''
+	for e in s:
+		ret += chr(ord(e)^5)
+	return ret
 
 def create_dir(filepath):
 	wdir = os.path.dirname(filepath)
@@ -56,10 +61,27 @@ def create_dir(filepath):
 				
 class CSession(requests.Session):
 	def login(self, username, password):
-		print('Login...')
-		if username == '********' or password == '********':
-			raise Exception('Please provide username and password before using.')
-			
+		'''
+			usage: 	You should only log in once for a session
+					ss = CSession.Session()
+					ss.login(username, password)
+			return: 
+				"Please provide username and password before using."
+				'Login failed, wrong username or password'
+				'Login failed while logging in by defalut user'
+				"Login successfully"
+		'''
+		if username == '' or password == '':
+			return "Please provide username and password before using."
+
+		response = self.get(MEMBERS_URL)
+		doc = pq(response.text)
+		members = {}
+		for e in doc('table').eq(1).children():
+			username_tmp = pq(e)('td').eq(0).text()
+			mtype_tmp = pq(e)('td').eq(1).text()
+			members[username_tmp] = mtype_tmp
+
 		payload = {
 			"handleOrEmail": username,
 			"password": password,
@@ -73,10 +95,34 @@ class CSession(requests.Session):
 		doc = pq(response.text)
 		payload['csrf_token'] = doc('input').attr('value')
 
-		response2 = self.post(
+		response = self.post(
 			LOGIN_URL, 
 			data = payload, 
 			headers = dict(referer=LOGIN_URL)
 		)
 
-		print("Login successfully")
+		doc = pq(response.text)
+		username_again = doc('div').filter('.lang-chooser').children().eq(1).children().eq(0).text()
+		if username_again == 'Enter' or username != username_again:
+			return 'Login failed, wrong username or password'
+
+		self.cookies.clear()
+
+		response = self.get(LOGIN_URL)
+		doc = pq(response.text)
+		payload['csrf_token'] = doc('input').attr('value')
+		payload['handleOrEmail'] = decode(DEFAULT_USERNAME)
+		payload['password'] = decode(DEFAULT_PASSWORD)
+
+		response = self.post(
+			LOGIN_URL, 
+			data = payload, 
+			headers = dict(referer=LOGIN_URL)
+		)
+
+		doc = pq(response.text)
+		username_again = doc('div').filter('.lang-chooser').children().eq(1).children().eq(0).text()
+		if username_again == 'Enter' or username_again != decode(DEFAULT_USERNAME):
+			return 'Login failed while logging in by defalut user'
+
+		return "Login successfully"

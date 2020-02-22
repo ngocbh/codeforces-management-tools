@@ -155,8 +155,12 @@ def send2moss(contestID, outdir, problem_dir, problem, lang):
 	for filename in os.listdir(wdir):
 		if rex.match(filename):
 			filepath = os.path.join(wdir, filename)
-			moss.addFile(filepath, '{}_{}_{}'.format(contestID, problem, filename))
-			number_of_file += 1
+			try:
+				moss.addFile(filepath, '{}_{}_{}'.format(contestID, problem, filename))
+				number_of_file += 1
+			except:
+				print('File {} is empty, check it again'.format(filepath))
+			
 			# print('{}_{}_{}'.format(contestID, problem, filename))
 
 	if number_of_file < 2:
@@ -186,7 +190,7 @@ def check_plagiarism(ss, contestID, outdir=WORKING_DIR):
 	if not contestID.isnumeric():
 		contestID = get_contest_id(contestID)
 
-	get_all_submission(ss, contestID, outdir)
+	# get_all_submission(ss, contestID, outdir)
 
 	urls = {}
 
@@ -213,12 +217,13 @@ def crawl_checked_standings(ss, contestID, outdir=WORKING_DIR):
 	df.to_csv(filepath, index=True)
 
 	row_list = check_plagiarism(ss, contestID, outdir)
-	
 	for row in row_list:
+		if not df.loc[(df['Who'] == row['username']), row['problem']].any():
+			continue
 		if df.loc[(df['Who'] == row['username']), row['problem']].values[0] == float(row['score']):
 			df.loc[(df['Who'] == row['username']), row['problem']] = -1
 		else: 
-			Print('An error occurred while updating score of {} on problem {} to'.format(row['username'], row['problem']))
+			print('An error occurred while updating score of {} on problem {} to'.format(row['username'], row['problem']))
 
 	problem_list = []
 	start = 0

@@ -176,6 +176,26 @@ def crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir
 			f.write(nor)
 		return None
 
+def get_contests(ss, url=GROUP_URL):
+	'''
+		usage:	ss = conmato.CSession()
+				conmato.get_contests(ss)
+		return:
+				a dictionary of contestid as key and contestname as value
+				example:
+				{'269187': 'Training 2 - EXHSEARCH - 20192'}
+	'''
+	response = ss.get(url)
+	doc = pq(response.text)
+	table = doc('table').not_('.rtable').not_('.table-form')
+	ret = {}
+	for tr in pq(table.children()[1:])('tr'):
+		contestid = pq(tr).attr('data-contestid')
+		if contestid == None:
+			continue
+		contestname = pq(tr).children().eq(0).remove('a').text()
+		ret[contestid] = contestname
+	return ret
 	
 # crawl list of standings urls
 def qcrawl(ss, urls, user_format, penalty, outdir=WORKING_DIR):

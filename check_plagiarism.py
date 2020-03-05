@@ -5,7 +5,7 @@ contestID = '257806'
 
 ss = conmato.CSession()
 
-ss.login('74164707NgocBH','123456789')
+ss.login(username='',password='')
 
 conmato.check_plagiarism(ss, contestID)
 # conmato.crawl_checked_standings(ss, contestID)

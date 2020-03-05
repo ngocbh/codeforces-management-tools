@@ -5,7 +5,7 @@ contestID = '265973'
 
 ss = conmato.CSession()
 
-ss.login('ngocjr7','neymarjr7')
+print(ss.login('',''))
 print(conmato.get_contests(ss))
 
 

@@ -60,7 +60,7 @@ def create_dir(filepath):
 				raise
 				
 class CSession(requests.Session):
-	def login(self, username, password):
+	def login(self, username='', password=''):
 		'''
 			usage: 	You should only log in once for a session
 					ss = CSession.Session()

@@ -15,8 +15,8 @@ PENALTY=True
 
 # username and password of an admin in codeforces group
 # use your account and turn on manage permission for all contests that you want to crawl standings
-USERNAME='74164707NgocBH'
-PASSWORD='123456789'
+USERNAME=''
+PASSWORD=''
 
 # directory of output file
 WORKING_DIR = os.path.dirname(os.path.abspath(__file__))

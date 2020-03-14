@@ -161,7 +161,7 @@ def send2moss(contestID, outdir, problem_dir, problem, lang):
 			except:
 				print('File {} is empty, check it again'.format(filepath))
 			
-			# print('{}_{}_{}'.format(contestID, problem, filename))
+			print('{}_{}_{}'.format(contestID, problem, filename))
 
 	if number_of_file < 2:
 		return None, None
@@ -190,7 +190,7 @@ def check_plagiarism(ss, contestID, outdir=WORKING_DIR):
 	if not contestID.isnumeric():
 		contestID = get_contest_id(contestID)
 
-	# get_all_submission(ss, contestID, outdir)
+	get_all_submission(ss, contestID, outdir)
 
 	urls = {}
 
@@ -212,7 +212,7 @@ def crawl_checked_standings(ss, contestID, outdir=WORKING_DIR):
 	contest_name = get_contest_name(ss, contestID)
 	df = crawl_standings(ss, contestID, outdir, only_dir=True)
 
-	filepath = os.path.join(outdir, 'report/{}/{}.csv'.format(contestID,contest_name))
+	filepath = os.path.join(outdir, 'report/{}/{}.csv'.format(contestID,contestID))
 	create_dir(filepath)
 	df.to_csv(filepath, index=True)
 
@@ -239,10 +239,10 @@ def crawl_checked_standings(ss, contestID, outdir=WORKING_DIR):
 
 	df = df.reset_index(drop=True)
 
-	filepath = os.path.join(outdir, 'results/{}-checked.csv'.format(contest_name))
+	filepath = os.path.join(outdir, 'results/{}-checked.csv'.format(contestID))
 	create_dir(filepath)
 	df.to_csv(filepath, index=True)
-	filepath = os.path.join(outdir, 'report/{}/{}-checked.csv'.format(contestID,contest_name))
+	filepath = os.path.join(outdir, 'report/{}/{}-checked.csv'.format(contestID,contestID))
 	create_dir(filepath)
 	df.to_csv(filepath, index=True)
 	print('Done!!! results was stored at {}'.format(filepath))

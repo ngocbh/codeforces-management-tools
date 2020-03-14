@@ -196,6 +196,51 @@ def get_contests(ss, url=GROUP_URL):
 		contestname = pq(tr).children().eq(0).remove('a').text()
 		ret[contestid] = contestname
 	return ret
+
+def toggle_manager_mode(ss, contestid):
+	response = ss.get(GROUP_URL)
+	doc = pq(response.text)
+	csrf_token = doc('span').attr['data-csrf']
+	payload = {
+		"csrf_token": csrf_token,
+		"contestId": contestid,
+		"newValue": 'true',
+		"action": 'toggleMashupContestManagerMode',
+	}
+	
+	response = ss.post(
+		'{}/{}'.format(DATA_URL,'mashup'), 
+		data = payload
+	)
+	if response.status_code == 200:
+		return True
+	else:
+		logger.error('toggle_manager_mode: an error while toggling manager mode')
+		return False
+
+
+def get_managed_contests(ss, url=GROUP_URL):
+	'''
+		get contests and toggle manager mode for all contest
+		usage:	ss = conmato.CSession()
+				conmato.get_managed_contests(ss)
+		return:
+				a dictionary of contestid as key and contestname as value
+				example:
+				{'269187': 'Training 2 - EXHSEARCH - 20192'}
+	'''
+	response = ss.get(url)
+	doc = pq(response.text)
+	table = doc('table').not_('.rtable').not_('.table-form')
+	ret = {}
+	for tr in pq(table.children()[1:])('tr'):
+		contestid = pq(tr).attr('data-contestid')
+		if contestid == None:
+			continue
+		contestname = pq(tr).children().eq(0).remove('a').text()
+		ret[contestid] = contestname
+		toggle_manager_mode(ss, contestid)
+	return ret
 	
 # crawl list of standings urls
 def qcrawl(ss, urls, user_format, penalty, outdir=WORKING_DIR):
@@ -207,7 +252,6 @@ if __name__ == '__main__':
 	# URL='https://codeforces.com/group/Ir5CI6f3FD/contest/251769/standings'
 	# USER_FORMAT=r'*'
 	# crawl_standings(ss, URL,'../data/standings.csv')
-	# login('74164707NgocBH','123456789')
 	URL='https://codeforces.com/group/Ir5CI6f3FD/contest/255647/standings'
 
 	USER_FORMAT=r'^44'

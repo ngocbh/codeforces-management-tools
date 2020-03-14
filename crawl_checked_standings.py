@@ -4,10 +4,9 @@ import conmato
 contestID = '265973'
 
 ss = conmato.CSession()
+print(ss.is_manager('74164707NgocBh','123456789'))
+ss.login('74164707NgocBh','123456789')
+print(conmato.get_managed_contests(ss))
 
-print(ss.login(username='',password=''))
-print(conmato.get_contests(ss))
-
-
-# conmato.check_plagiarism(ss, contestID)
-# conmato.crawl_checked_standings(ss, contestID)
+conmato.check_plagiarism(ss, '269186')
+# conmato.crawl_checked_standings(ss, '269186')

@@ -2,7 +2,9 @@ import os
 
 WORKING_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../data')
 
-USERID = 608207320 # USERID in moss.standford.edu, to register check https://theory.stanford.edu/~aiken/moss/
+LOGGING_FILE=os.path.join(WORKING_DIR, 'log.txt')
+
+USERID = 203062946 # USERID in moss.standford.edu, to register check https://theory.stanford.edu/~aiken/moss/
 
 MIN_LINES=10 # Only show matches (in check check plajiarism) with the number of the same line > MIN_LINES
 
@@ -26,6 +28,8 @@ GROUP_ID='Ir5CI6f3FD'
 LOGIN_URL='https://codeforces.com/enter?back=%2F'
 
 GROUP_URL='http://codeforces.com/group/Ir5CI6f3FD/contests'
+
+DATA_URL='http://codeforces.com/group/Ir5CI6f3FD/data'
 
 STANDINGS_URL='http://codeforces.com/group/Ir5CI6f3FD/contest/{}/standings'
 

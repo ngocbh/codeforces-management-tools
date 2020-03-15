@@ -180,9 +180,12 @@ def check_problem(contestID, outdir, problem_dir, problem):
 	ret = {}
 	wdir = os.path.join(problem_dir, problem)
 	for lang in LANGUAGES:
-		name, url = send2moss(contestID, outdir, problem_dir, problem, lang)
-		if url != None:
-			ret[name] = url
+		try: 
+			name, url = send2moss(contestID, outdir, problem_dir, problem, lang)
+			if url != None:
+				ret[name] = url
+		except:
+			logger.error('send2moss:get an error while requesting to MOSS, MOSS server maybe under maintenance, try later')
 
 	return ret
 

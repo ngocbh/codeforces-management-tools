@@ -48,6 +48,19 @@ csc.qcrawl(URLS, USER_FORMAT, PENALTY, OUTDIR)
 
 ```
 
+### How to crawl standings for an existing student list
+Config your crawl_standings_for_merge.py, change USERNAME and PASSWORD to your Codeforces account
+```shell
+python3 crawl_standings_for_merge.py your_student_list.xlsx standing_url
+```
+* your_student_list.xlsx must have a 'UserId' column which contains the information of student Codeforces accounts
+* standing_url is a ranking URL of a Codeforces contest
+
+The total score result will be stored in the last column of ```your_student_list.xlsx```
+
+
+
+
 ### How to check plagiarism
 
 ```shell

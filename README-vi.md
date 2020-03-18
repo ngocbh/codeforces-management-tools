@@ -14,6 +14,14 @@ URLS = [
 * ```PENALTY=True``` , có tính thời gian nộp bài trong xếp hạng,
 
 * ```USER_FORMAT=r'^44'``` lọc sinh viên theo lớp , '^44' là lấy các sinh viên bắt đầu bằng 44...
+### Crawl standings vào một danh sách sinh viên có sẵn
+Cấu hình file crawl_standings_for_merge.py, đổi USERNAME và PASSWORD thành tài khoản Codeforces của bạn
+```shell
+python3 crawl_standings_for_merge.py your_student_list.xlsx standing_url
+```
+* your_student_list.xls phải có cột 'UserId' mô tả thông tin danh sách các tài khoản Codeforces của sinh viên
+* standing_url là đường link tới bảng rank tương ứng
+Kết quả tổng điểm của contest đó sẽ được lưu vào cột cuối cùng trong file ```your_student_list.xlsx```
 
 ### Check plagiarism 
 * Kết quả check trùng sẽ được lưu vào ```data/report/contestID```

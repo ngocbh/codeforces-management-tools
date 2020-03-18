@@ -176,6 +176,58 @@ def crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir
 			f.write(nor)
 		return None
 
+def crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True):
+	if URL.isnumeric():
+		URL = get_standings_url(URL)
+
+	print('Crawling : {}'.format(URL))
+	error = False
+	data  = []
+	response = ss.get(URL)
+	if URL != response.url:
+		error = True;
+
+	doc = pq(response.text)
+	row = doc('div').filter('.datatable').find('tr')
+	contest_name = get_contest_name(ss, URL)
+
+	column_names = parse_column_names(doc(row[0]))
+	if penalty:
+		column_names.append('Penalty')
+
+	crawl_participant(ss, URL, data, column_names, penalty)
+
+	df = None
+	df = pd.DataFrame(data, columns=column_names)
+
+	if penalty:
+		column_names.remove('Penalty')
+		column_names.insert(3, 'Penalty')
+		df = df[column_names]
+
+	try:
+		if error:
+			raise Exception('')
+		df.Who.unique()
+		df = df.drop_duplicates()
+
+		if penalty:
+			df = df.sort_values(by=['=','Penalty'],ascending=[False,True])
+		df = df[df.Who.apply(lambda x: True if re.search(user_format,x) else False)]
+		df = df[['Who', '=']]
+		df = df.rename(columns={'Who' : 'UserId'})
+		df = df.rename(columns={'='  : contest_name});
+		return df
+	except:
+		nor = "I cannot recognize this site {}, please check those cases:\n\
+			1. maybe it isn't the standings of codeforces.\n \
+			2. you should make your contest public before.\n \
+			3. login.\n \
+			4. turn on manage permission for the account used to login".format(URL)
+		print(nor)
+		return None
+
+
 def get_contests(ss, url=GROUP_URL):
 	'''
 		usage:	ss = conmato.CSession()

@@ -10,7 +10,7 @@ import logging
 
 # logging.basicConfig(filename=LOGGING_FILE,level=logging.level)
 from logging.handlers import RotatingFileHandler
-
+create_dir('./data')
 logging.basicConfig(handlers=[RotatingFileHandler(filename=LOGGING_FILE,
                      mode='w', maxBytes=512000, backupCount=4)], level=logging.INFO,
                      format='%(levelname)s %(asctime)s %(message)s', 

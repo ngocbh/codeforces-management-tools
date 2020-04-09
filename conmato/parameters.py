@@ -16,6 +16,8 @@ NEW_SCORE=-1 # assign new score to cheating submission
 
 VIRTUALIZATION=True # generate a picture?
 
+USER_FORMAT=r'^[0-9]{8,10}[A-Za-z]{4,10}$'
+
 TIMESLEEP = 1
 
 DEFAULT_USERNAME='21431252KbjfGM'
@@ -31,11 +33,11 @@ GROUP_URL='http://codeforces.com/group/Ir5CI6f3FD/contests'
 
 DATA_URL='http://codeforces.com/group/Ir5CI6f3FD/data'
 
-STANDINGS_URL='http://codeforces.com/group/Ir5CI6f3FD/contest/{}/standings'
+STANDINGS_URL='http://codeforces.com/group/{}/contest/{}/standings'
 
-STATUS_URL='http://codeforces.com/group/Ir5CI6f3FD/contest/{}/status'
+STATUS_URL='http://codeforces.com/group/{}/contest/{}/status'
 
-MEMBERS_URL='http://codeforces.com/group/Ir5CI6f3FD/members'
+MEMBERS_URL='http://codeforces.com/group/{}/members'
 
 LANGUAGES = (
         "c",

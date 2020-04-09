@@ -9,6 +9,7 @@ import requests
 import pandas as pd
 import re, os
 import time
+from conmato.contest import get_contest_name
 
 
 CODEFORCES_URI='https://codeforces.com'
@@ -34,9 +35,9 @@ def calc_pen(s):
 	sa = s.split(':')
 	sa.reverse()
 
-	pen = 0;
+	pen = 0
 	for i in range(len(sa)):
-		pen += int(sa[i])*factor[i];
+		pen += int(sa[i])*factor[i]
 
 	return pen
 
@@ -51,7 +52,7 @@ def parse_score(text):
 			score = float(text)
 		return float(text), 0
 	elif ' ' in text:
-		ts = text.split(' ');
+		ts = text.split(' ')
 		try:
 			score = int(ts[0])
 		except:
@@ -105,21 +106,11 @@ def crawl_participant(ss, URL, data, column_names, penalty):
 			crawl_participant(ss, url, data, column_names, penalty)
 
 
-def get_contest_name(ss, contestID):
-	if not contestID.isnumeric():
-		contestID = get_contest_id(contestID)
-	url = get_standings_url(contestID)
-	response = ss.get(url)
-	doc = pq(response.text)
-	contest_name = doc('div').filter('.contest-name').find('a').text()
-	contest_name = contest_name.replace(' ','-').replace('\n','')
-	return contest_name
-
 
 # crawl a standings url
-def crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir=False):
+def crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir=False, groupID=GROUP_ID):
 	if URL.isnumeric():
-		URL = get_standings_url(URL)
+		URL = get_standings_url(URL,groupID)
 		
 	print('Crawling : {}'.format(URL))
 	error = False
@@ -127,7 +118,7 @@ def crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir
 	column_names = []
 	response = ss.get(URL)
 	if URL != response.url:
-		error = True;
+		error = True
 
 	doc = pq(response.text)
 	row = doc('div').filter('.datatable').find('tr')
@@ -176,16 +167,16 @@ def crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir
 			f.write(nor)
 		return None
 
-def crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True):
+def crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True,groupID=GROUP_ID):
 	if URL.isnumeric():
-		URL = get_standings_url(URL)
+		URL = get_standings_url(URL,groupID)
 
 	print('Crawling : {}'.format(URL))
 	error = False
 	data  = []
 	response = ss.get(URL)
 	if URL != response.url:
-		error = True;
+		error = True
 
 	doc = pq(response.text)
 	row = doc('div').filter('.datatable').find('tr')
@@ -216,7 +207,7 @@ def crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True):
 		df = df[df.Who.apply(lambda x: True if re.search(user_format,x) else False)]
 		df = df[['Who', '=']]
 		df = df.rename(columns={'Who' : 'UserId'})
-		df = df.rename(columns={'='  : contest_name});
+		df = df.rename(columns={'='  : contest_name})
 		return df
 	except:
 		nor = "I cannot recognize this site {}, please check those cases:\n\
@@ -226,78 +217,11 @@ def crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True):
 			4. turn on manage permission for the account used to login".format(URL)
 		print(nor)
 		return None
-
-
-def get_contests(ss, url=GROUP_URL):
-	'''
-		usage:	ss = conmato.CSession()
-				conmato.get_contests(ss)
-		return:
-				a dictionary of contestid as key and contestname as value
-				example:
-				{'269187': 'Training 2 - EXHSEARCH - 20192'}
-	'''
-	response = ss.get(url)
-	doc = pq(response.text)
-	table = doc('table').not_('.rtable').not_('.table-form')
-	ret = {}
-	for tr in pq(table.children()[1:])('tr'):
-		contestid = pq(tr).attr('data-contestid')
-		if contestid == None:
-			continue
-		contestname = pq(tr).children().eq(0).remove('a').text()
-		ret[contestid] = contestname
-	return ret
-
-def toggle_manager_mode(ss, contestid):
-	response = ss.get(GROUP_URL)
-	doc = pq(response.text)
-	csrf_token = doc('span').attr['data-csrf']
-	payload = {
-		"csrf_token": csrf_token,
-		"contestId": contestid,
-		"newValue": 'true',
-		"action": 'toggleMashupContestManagerMode',
-	}
-	
-	response = ss.post(
-		'{}/{}'.format(DATA_URL,'mashup'), 
-		data = payload
-	)
-	if response.status_code == 200:
-		return True
-	else:
-		logger.error('toggle_manager_mode: an error while toggling manager mode')
-		return False
-
-
-def get_managed_contests(ss, url=GROUP_URL):
-	'''
-		get contests and toggle manager mode for all contest
-		usage:	ss = conmato.CSession()
-				conmato.get_managed_contests(ss)
-		return:
-				a dictionary of contestid as key and contestname as value
-				example:
-				{'269187': 'Training 2 - EXHSEARCH - 20192'}
-	'''
-	response = ss.get(url)
-	doc = pq(response.text)
-	table = doc('table').not_('.rtable').not_('.table-form')
-	ret = {}
-	for tr in pq(table.children()[1:])('tr'):
-		contestid = pq(tr).attr('data-contestid')
-		if contestid == None:
-			continue
-		contestname = pq(tr).children().eq(0).remove('a').text()
-		ret[contestid] = contestname
-		toggle_manager_mode(ss, contestid)
-	return ret
 	
 # crawl list of standings urls
-def qcrawl(ss, urls, user_format, penalty, outdir=WORKING_DIR):
+def qcrawl(ss, urls, user_format, penalty, outdir=WORKING_DIR, groupID=GROUP_ID):
 	for url in urls:
-		crawl_standings(ss, url, outdir, user_format, penalty, only_dir=True)
+		crawl_standings(ss, url, outdir, user_format, penalty, only_dir=True, groupID=groupID)
 
 if __name__ == '__main__':
 	ss = init_session()

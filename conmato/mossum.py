@@ -1,3 +1,9 @@
+"""
+# Problem: mossum.py
+# Description: This code inherited from https://github.com/hjalti/mossum
+# Created by ngocjr7 on [2020-04-07 21:09:25]
+"""
+
 from __future__ import absolute_import
 
 from pyquery import PyQuery as pq
@@ -87,7 +93,7 @@ def get_basefile(url):
 	pq(doc('table')[1:]).remove()
 	return doc
 
-def get_results(basefile, name, moss_url):
+def get_results(basefile, name, moss_url, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
 	resp = requests.get(moss_url)
 	# print(resp.text)
 	doc = pq(resp.text)
@@ -108,7 +114,7 @@ def get_results(basefile, name, moss_url):
 			pass
 		
 
-	fil = Filter(MIN_PERCENT, MIN_LINES)
+	fil = Filter(min_percent, min_lines)
 	matches = list(filter(fil.include,matches))
 	for match in matches:
 		basefile('table').append(match.html)
@@ -169,7 +175,7 @@ def image(results, outdir, index=None):
 		os.remove(filepath)
 	print('DONE')
 
-def summarize(urls, outdir):
+def summarize(urls, outdir, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
 	print('Summarizing...')
 	all_res = []
 	if len(urls) == 0:
@@ -180,7 +186,7 @@ def summarize(urls, outdir):
 	for name, url in urls.items():
 		if not basefile:
 			basefile = get_basefile(url)
-		res = get_results(basefile, name, url)
+		res = get_results(basefile, name, url, min_lines=min_lines, min_percent=min_percent)
 		all_res.append(res)
 
 	filepath = os.path.join(outdir, 'summarized_report.html')

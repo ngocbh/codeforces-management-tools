@@ -73,10 +73,10 @@ def get_score(data):
 		return data('span').filter('.verdict-format-points').text()
 	return '0'
 
-def get_all_submission(ss, url, outdir):
+def get_all_submission(ss, url, outdir,groupID=GROUP_ID):
 	if url.isnumeric():
 		contestID = url
-		url = get_status_url(contestID)
+		url = get_status_url(contestID,groupID=groupID)
 	else:
 		contestID = get_contest_id(url)
 	print('Downloading submission from page {}...'.format(url))
@@ -135,7 +135,7 @@ def get_all_submission(ss, url, outdir):
 
 	print('Downloaed submissions in {}'.format(url))
 	se = random.uniform(float(TIMESLEEP)/2, TIMESLEEP)
-	print('Let me sleep {}s to prevent Codeforces from rejecting requests...'.format(TIMESLEEP))
+	print('Let me sleep {}s to prevent Codeforces rejecting requests...'.format(TIMESLEEP))
 	time.sleep(se)
 	# return
 	# next page
@@ -143,11 +143,11 @@ def get_all_submission(ss, url, outdir):
 	next_page = get_next_page(doc)
 	url = '{}{}'.format(CODEFORCES_URI, next_page)
 	if url not in CRAWLED:
-		get_all_submission(ss, url, outdir)
-
+		get_all_submission(ss, url, outdir, groupID)
 
 def send2moss(contestID, outdir, problem_dir, problem, lang):
 	moss = mosspy.Moss(USERID, lang)
+	moss.setIgnoreLimit(100000000)
 	wdir = os.path.join(problem_dir, problem)
 	rex = re.compile('.*\\.{}$'.format(lang))
 
@@ -189,11 +189,11 @@ def check_problem(contestID, outdir, problem_dir, problem):
 
 	return ret
 
-def check_plagiarism(ss, contestID, outdir=WORKING_DIR):
+def check_plagiarism(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
 	if not contestID.isnumeric():
 		contestID = get_contest_id(contestID)
 
-	get_all_submission(ss, contestID, outdir)
+	get_all_submission(ss, contestID, outdir, groupID=groupID)
 
 	urls = {}
 
@@ -201,7 +201,7 @@ def check_plagiarism(ss, contestID, outdir=WORKING_DIR):
 	for problem in os.listdir(problem_dir):
 		urls.update(check_problem(contestID, outdir, problem_dir, problem))
 
-	row_list = summarize(urls, os.path.join(outdir, 'report/{}'.format(contestID)))
+	row_list = summarize(urls, os.path.join(outdir, 'report/{}'.format(contestID)), min_lines=min_lines, min_percent=min_percent)
 	print('Checked plagiarism')
 	return row_list
 
@@ -211,7 +211,7 @@ def compute_total_score(row, problem_list):
 		ret += row[problem]
 	return ret
 
-def crawl_checked_standings(ss, contestID, outdir=WORKING_DIR):
+def crawl_checked_standings(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
 	contest_name = get_contest_name(ss, contestID)
 	df = crawl_standings(ss, contestID, outdir, only_dir=True)
 
@@ -219,7 +219,7 @@ def crawl_checked_standings(ss, contestID, outdir=WORKING_DIR):
 	create_dir(filepath)
 	df.to_csv(filepath, index=True)
 
-	row_list = check_plagiarism(ss, contestID, outdir)
+	row_list = check_plagiarism(ss, contestID, outdir, groupID=groupID, min_lines=min_lines, min_percent=min_percent)
 	for row in row_list:
 		if not df.loc[(df['Who'] == row['username']), row['problem']].any():
 			continue

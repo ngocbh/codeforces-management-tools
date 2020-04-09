@@ -3,7 +3,7 @@ import os
 
 # List of urls of contests
 URLS = [
-'http://codeforces.com/group/Ir5CI6f3FD/contest/255647/standings'
+'https://codeforces.com/group/Ir5CI6f3FD/contest/257967/standings'
 ]
 
 # filter for each class . use r'.*' for all participants.

@@ -5,7 +5,7 @@ __pycache__/
 .DS_Store
 # C extensions
 *.so
-
+.vscode/*
 data/*
 
 *.sublime-project

@@ -11,6 +11,29 @@ Check document in vietnamese [here](https://github.com/ngocjr7/codeforces-manage
 pip install -r requirements.txt
 ```
 
+### API
+```python
+ss = conmato.CSession() # create codeforces session, inherited request.Session()
+ss.login(username='',password='') # login to codeforces and save cookie to ss
+ss.get_logged_username() # get current username logging in codeforces
+ss.get() # get and log
+ss.post() # post
+conmato.member.is_manager(groupID=GROUP_ID, username='', password='')
+conmato.member.get_all_members(ss, groupID=GROUP_ID)
+conmato.member.get_pending_participants(ss, groupID=GROUP_ID)
+conmato.member.confirm_all_participants(ss, action, user_format=USER_FORMAT, groupID=GROUP_ID)
+conmato.member.remove_all_participants(ss, user_format='.*', groupID=GROUP_ID)
+conmato.contest.get_managed_contests(ss, groupID=GROUP_ID) # get all contests and toggle manager mode for all contests
+conmato.contest.toggle_manager_mode(ss, contestid, groupID=GROUP_ID)
+conmato.contest.get_contests(ss, groupID=GROUP_ID)
+conmato.contest.get_contest_name(ss, contestID, groupID=GROUP_ID)
+conmato.crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True,groupID=GROUP_ID) # see How to crawl standings for an existing student list
+conmato.crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir=False, groupID=GROUP_ID) # crawl standing for url
+conmato.qcrawl(ss, urls, user_format, penalty, outdir=WORKING_DIR, groupID=GROUP_ID) # crawl list standings in urls
+conmato.check_plagiarism(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT)
+conmato.crawl_checked_standings(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT)
+```
+
 ### How to crawl standings
 
 ```shell

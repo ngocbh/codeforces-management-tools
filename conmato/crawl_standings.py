@@ -122,7 +122,7 @@ def crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir
 
 	doc = pq(response.text)
 	row = doc('div').filter('.datatable').find('tr')
-	contest_name = get_contest_name(ss, URL)
+	contest_name = get_contest_name(ss, URL, groupID)
 	
 	column_names = parse_column_names(doc(row[0]))
 	if penalty:
@@ -180,7 +180,7 @@ def crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True,groupID=G
 
 	doc = pq(response.text)
 	row = doc('div').filter('.datatable').find('tr')
-	contest_name = get_contest_name(ss, URL)
+	contest_name = get_contest_name(ss, URL, groupID)
 
 	column_names = parse_column_names(doc(row[0]))
 	if penalty:

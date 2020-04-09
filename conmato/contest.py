@@ -11,10 +11,10 @@ import re, os
 import time
 
 
-def get_contest_name(ss, contestID):
+def get_contest_name(ss, contestID, groupID=GROUP_ID):
 	if not contestID.isnumeric():
 		contestID = get_contest_id(contestID)
-	url = get_standings_url(contestID)
+	url = get_standings_url(contestID, groupID)
 	response = ss.get(url)
 	doc = pq(response.text)
 	contest_name = doc('div').filter('.contest-name').find('a').text()
@@ -23,7 +23,7 @@ def get_contest_name(ss, contestID):
 
 
 
-def get_contests(ss, url=GROUP_URL):
+def get_contests(ss, groupID=GROUP_ID):
 	'''
 		usage:	ss = conmato.CSession()
 				conmato.get_contests(ss)
@@ -32,6 +32,7 @@ def get_contests(ss, url=GROUP_URL):
 				example:
 				{'269187': 'Training 2 - EXHSEARCH - 20192'}
 	'''
+	url = GROUP_URL.format(groupID)
 	response = ss.get(url)
 	doc = pq(response.text)
 	table = doc('table').not_('.rtable').not_('.table-form')
@@ -44,8 +45,9 @@ def get_contests(ss, url=GROUP_URL):
 		ret[contestid] = contestname
 	return ret
 
-def toggle_manager_mode(ss, contestid):
-	response = ss.get(GROUP_URL)
+def toggle_manager_mode(ss, contestid, groupID=GROUP_ID):
+	url = GROUP_URL.format(groupID)
+	response = ss.get(url)
 	doc = pq(response.text)
 	csrf_token = doc('span').attr['data-csrf']
 	payload = {
@@ -56,7 +58,7 @@ def toggle_manager_mode(ss, contestid):
 	}
 	
 	response = ss.post(
-		'{}/{}'.format(DATA_URL,'mashup'), 
+		'{}/{}'.format(DATA_URL.format(groupID),'mashup'), 
 		data = payload
 	)
 	if response.status_code == 200:
@@ -66,7 +68,7 @@ def toggle_manager_mode(ss, contestid):
 		return False
 
 
-def get_managed_contests(ss, url=GROUP_URL):
+def get_managed_contests(ss, groupID=GROUP_ID):
 	'''
 		get contests and toggle manager mode for all contest
 		usage:	ss = conmato.CSession()
@@ -76,6 +78,7 @@ def get_managed_contests(ss, url=GROUP_URL):
 				example:
 				{'269187': 'Training 2 - EXHSEARCH - 20192'}
 	'''
+	url = GROUP_URL.format(groupID)
 	response = ss.get(url)
 	doc = pq(response.text)
 	table = doc('table').not_('.rtable').not_('.table-form')
@@ -86,5 +89,5 @@ def get_managed_contests(ss, url=GROUP_URL):
 			continue
 		contestname = pq(tr).children().eq(0).remove('a').text()
 		ret[contestid] = contestname
-		toggle_manager_mode(ss, contestid)
+		toggle_manager_mode(ss, contestid, groupID)
 	return ret

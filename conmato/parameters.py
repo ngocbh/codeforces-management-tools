@@ -29,9 +29,9 @@ GROUP_ID='Ir5CI6f3FD'
 
 LOGIN_URL='https://codeforces.com/enter?back=%2F'
 
-GROUP_URL='http://codeforces.com/group/Ir5CI6f3FD/contests'
+GROUP_URL='http://codeforces.com/group/{}/contests'
 
-DATA_URL='http://codeforces.com/group/Ir5CI6f3FD/data'
+DATA_URL='http://codeforces.com/group/{}/data'
 
 STANDINGS_URL='http://codeforces.com/group/{}/contest/{}/standings'
 

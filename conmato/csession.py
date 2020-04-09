@@ -30,7 +30,7 @@ class CSession(requests.Session):
 		"""
 			Return username if it's logged, otherwise, return None
 		"""
-		response = self.get(GROUP_URL)
+		response = self.get(CODEFORCES_URI)
 		doc = pq(response.text)
 		username = doc('div').filter('.lang-chooser').children().eq(1).children().eq(0).text()
 		if username == 'Enter':

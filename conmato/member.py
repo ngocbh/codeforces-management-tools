@@ -19,13 +19,15 @@ def remove_participants(ss, member, groupID=GROUP_ID):
     if response.status_code != 200:
         logger.warning('confirm_joining: an error occurred while confirming')
 
-def remove_all_participants(ss, user_format='.*', groupID=GROUP_ID):
+def remove_all_participants(ss, user_format=r'.*', groupID=GROUP_ID):
     members = get_all_members(ss, groupID)
     for member in members:
         if member['pending'] == True or member['role'] == 'manager':
             continue
         if re.search(user_format,member['username']):
             remove_participants(ss, member, groupID)
+        se = random.uniform(float(TIMESLEEP)/2, TIMESLEEP)
+        time.sleep(se)
 
 def confirm_joining(ss, member, action, groupID=GROUP_ID):
     url = MEMBERS_URL.format(groupID)
@@ -56,6 +58,8 @@ def confirm_all_participants(ss, action, user_format=USER_FORMAT, groupID=GROUP_
             confirm_joining(ss, member, action, groupID)
         elif not re.search(user_format,member['username']) and action == 'reject':
             confirm_joining(ss, member, action, groupID)
+        se = random.uniform(float(TIMESLEEP)/2, TIMESLEEP)
+        time.sleep(se)
 
 def get_pending_participants(ss, groupID=GROUP_ID):
     url = MEMBERS_URL.format(groupID)

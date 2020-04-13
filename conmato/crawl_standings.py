@@ -9,12 +9,140 @@ import requests
 import pandas as pd
 import re, os
 import time
+import hashlib, random
+import urllib, json
 from conmato.contest import get_contest_name
 
 
 CODEFORCES_URI='https://codeforces.com'
 CRAWLED=set()
 s = requests.Session()
+
+def get_standings(contestID, usernames=None):
+	"""
+		usernames is list of usernames
+		ex: usernames = ['abasf', 'adfjsdfkas']
+	"""
+	if usernames != None:
+		for i in range(len(usernames)):
+			usernames[i] = usernames[i].lower()
+
+	rint = random.randint(100000,999999)
+	current_time = int(time.time())
+
+	parameters = {}
+	parameters['apiKey'] = USER_KEY
+	parameters['contestId'] = contestID
+	# if not usernames or len(usernames) != 0:
+	# 	usernames_str = ''
+	# 	for i in range(len(usernames)):
+	# 		usernames_str +=  usernames[i]
+	# 		if i != len(usernames)-1:
+	# 			usernames_str += ';'
+	# 	parameters['handles'] = usernames_str
+	parameters['showUnofficial'] = 'false'
+	parameters['time'] = current_time
+	urlparameters = ''
+	for i, (key, value) in enumerate(parameters.items()):
+		urlparameters += str(key) + '=' + str(value)
+		if i != len(parameters) - 1:
+			urlparameters += '&'
+
+	sigstr = '{}/contest.standings?{}#{}'.format(rint, urlparameters, USER_SECRET)
+	apiSig = hashlib.sha512(sigstr.encode('utf-8')).hexdigest()
+	
+	api = 'https://codeforces.com/api/contest.standings?{}&apiSig={}{}'.format(urlparameters,rint, apiSig)
+
+	response = requests.get(api)
+	resdict = json.loads(response.text)
+	if resdict['status'] != 'OK':
+		logger.warning('get_standings:{}'.format(resdict['comment']))
+		return None
+
+	standings = {}
+	standings['contest'] = resdict['result']['contest']
+	standings['problems'] = []
+	for problem in resdict['result']['problems']:
+		standings['problems'].append({'index': problem['index'], 'name': problem['name']})
+
+	standings['penalty'] = 0
+	standings['rows'] = []
+	for row in resdict['result']['rows']:
+		used_row = {}
+		used_row['handles'] = ''
+		for i in range(len(row['party']['members'])):
+			used_row['handles'] += row['party']['members'][i]['handle']
+			if i != len(row['party']['members']) - 1:
+				used_row['handles'] += ','
+
+		used_row['type'] = row['party']['participantType']
+		used_row['rank'] = row['rank']
+		used_row['points'] = row['points']
+		used_row['penalty'] = row['penalty']
+		standings['penalty'] += int(row['penalty'])
+		used_row['bestSubmissionTimeSeconds'] = 0
+		used_row['problemResults'] = row['problemResults']
+		for pr in row['problemResults']:
+			if 'bestSubmissionTimeSeconds' in pr:
+				used_row['bestSubmissionTimeSeconds'] += pr['bestSubmissionTimeSeconds']
+		if 'lastSubmissionTimeSeconds' in row:
+			used_row['lastSubmissionTimeSeconds'] = row['lastSubmissionTimeSeconds']
+		else:
+			used_row['lastSubmissionTimeSeconds'] = 0
+
+		if usernames != None:
+			if used_row['handles'].lower() in usernames:
+				standings['rows'].append(used_row)
+		else:
+			standings['rows'].append(used_row)
+
+	# print(json.dumps(standings, indent=2))
+	return standings
+
+
+def get_standings_to_dataframe(contestID, usernames=None, penalty=True, get_name=False):
+	standings = get_standings(contestID, usernames)
+	data = []
+	column_names = ['#', 'Who', '=']
+	if penalty:
+		column_names.append('Penalty')
+	prob_indexes = []
+	for prob in standings['problems']:
+		column_names.append(prob['index'])
+		prob_indexes.append(prob['index'])
+
+	for row in standings['rows']:
+		data_row = {}
+		data_row['#'] = row['rank']
+		data_row['Who'] = row['handles']
+		data_row['='] = row['points']
+		if penalty == True:
+			if standings['penalty'] == 0:
+				data_row['Penalty'] = row['bestSubmissionTimeSeconds']
+			else:
+				data_row['Penalty'] = row['penalty']
+		for i, prob in enumerate(row['problemResults']):
+			data_row[prob_indexes[i]] = prob['points']
+		data.append(data_row)
+
+	df = pd.DataFrame(data, columns=column_names)
+	df.name = standings['contest']['name']
+	if penalty:
+		df = df.sort_values(by=['=','Penalty'],ascending=[False,True])
+
+	if get_name:
+		return df, standings['contest']['name']
+	else:
+		return df
+
+def get_standings_to_csv(contestID, usernames=None, penalty=True, outdir=WORKING_DIR):
+	df, contest_name = get_standings_to_dataframe(contestID, usernames, penalty, get_name=True)
+	filepath = os.path.join(outdir, 'results/{}.csv'.format(contest_name.replace(' ','-')))
+	create_dir(filepath)
+	df.to_csv(filepath, index=True)
+	print('Done!! {}'.format(filepath))
+	return df, contest_name
+
 
 def get_pages(doc):
 	page_links = []
@@ -70,7 +198,7 @@ def regex_filter(val, regex):
 			return False
 	else:
 		return False
-	
+
 
 def crawl_participant(ss, URL, data, column_names, penalty):
 	response = ss.get(URL)
@@ -104,7 +232,6 @@ def crawl_participant(ss, URL, data, column_names, penalty):
 		url = '{}{}'.format(CODEFORCES_URI, link)
 		if url not in CRAWLED:
 			crawl_participant(ss, url, data, column_names, penalty)
-
 
 
 # crawl a standings url

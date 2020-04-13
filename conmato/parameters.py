@@ -22,6 +22,8 @@ TIMESLEEP = 1
 
 DEFAULT_USERNAME='21431252KbjfGM'
 DEFAULT_PASSWORD='4761032=<'
+USER_KEY='757e4de2c3d19ff5a823003bbfa108aaab96d834' # get key and sceret here http://codeforces.com/settings/api
+USER_SECRET='12872454ac44ec1bc0ada71a12bf186397ee7438'
 
 CODEFORCES_URI='https://codeforces.com'
 

@@ -193,6 +193,7 @@ def check_plagiarism(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_li
 	if not contestID.isnumeric():
 		contestID = get_contest_id(contestID)
 
+	
 	get_all_submission(ss, contestID, outdir, groupID=groupID)
 
 	urls = {}
@@ -212,8 +213,7 @@ def compute_total_score(row, problem_list):
 	return ret
 
 def crawl_checked_standings(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
-	contest_name = get_contest_name(ss, contestID, groupID)
-	df = crawl_standings(ss, contestID, outdir, only_dir=True)
+	df, contest_name = get_standings_to_csv(contestID, outdir=outdir)
 
 	filepath = os.path.join(outdir, 'report/{}/{}.csv'.format(contestID,contestID))
 	create_dir(filepath)

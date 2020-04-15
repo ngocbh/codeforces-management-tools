@@ -59,31 +59,20 @@ The results will be stored in ```data/results```
 Change parameters in crawl_original_standings.py:
 
 ```python
-# List url of contests
-URLS = [
-'263142',
-'261501'
-]
+import conmato
+import os
 
-# filter for each class . use r'.*' for all participants.
-USER_FORMAT=r'.*' #get all participants
-# USER_FORMAT=r'^44' #get participants like 44******* 
 
 # Would you like to use the submission time to rank participants?
 PENALTY=True
 
-# username and password of an admin in codeforces group
-# use your account and turn on manage permission for all contests that you want to crawl standings
-USERNAME='********'
-PASSWORD='********'
 
-# directory of output file
-WORKING_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTDIR = os.path.join(WORKING_DIR, 'data')
+# A list of user usernames = ['abc', 'def']
+USERNAMES=None # None to get all participants
 
-# dont change it
-csc.login(USERNAME,PASSWORD)
-csc.qcrawl(URLS, USER_FORMAT, PENALTY, OUTDIR)
+contest_id = '256575'
+
+conmato.get_standings_to_csv(contest_id, usernames=USERNAMES, penalty=PENALTY)
 
 ```
 

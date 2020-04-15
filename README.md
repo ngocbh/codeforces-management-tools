@@ -19,17 +19,40 @@ ss.get_logged_username() # get current username logging in codeforces
 ss.get() # get and log
 ss.post() # post
 
+
+# group_id = '*********'
 conmato.member.is_manager(group_id=GROUP_ID, username='', password='')
+
+# return: list of members
 conmato.member.get_all_members(session, group_id=GROUP_ID)
+
+# return: list of pending members
 conmato.member.get_pending_participants(session, group_id=GROUP_ID)
-conmato.member.confirm_joining(session, member, action, group_id=GROUP_ID)
+
+# action = 'accept' or 'reject'
+# member: json returned from get_pending_participants
+conmato.member.confirm_joining(session, member, action, group_id=GROUP_ID) 
+
+# action = 'accept' -> accept all user that match user_format
+# action = 'reject' -> reject all user that not match user_format
 conmato.member.confirm_all_participants(session, action, user_format=USER_FORMAT, group_id=GROUP_ID)
-remove_participants(session, member, group_id=GROUP_ID)
+
+# member returned from get_all_members
+conmato.member.remove_participants(session, member, group_id=GROUP_ID)
+# remove all members that match user_format
 conmato.member.remove_all_participants(session, user_format='.*', group_id=GROUP_ID)
 
-conmato.contest.get_managed_contests(session, group_id=GROUP_ID) # get all contests and toggle manager mode for all contests
+# get contest and toggle manager mode for all contests
+# return: list of contest
+conmato.contest.get_managed_contests(session, group_id=GROUP_ID) 
+
+# toggle manager mode for contest_id in group_id
 conmato.contest.toggle_manager_mode(session, contest_id, group_id=GROUP_ID)
+
+# get all contests
 conmato.contest.get_contests(session, group_id=GROUP_ID)
+
+# get contest name
 conmato.contest.get_contest_name(session, contest_id, group_id=GROUP_ID)
 
 # get standings used codeforces api

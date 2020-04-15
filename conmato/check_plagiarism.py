@@ -216,7 +216,7 @@ def check_problem(contest_id, output_dir, problem_dir, problem):
     return result
 
 
-def check_plagiarism(session, contest_id, output_dir=WORKING_DIR,  group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
+def check_plagiarism(session, contest_id, output_dir=WORKING_DIR, group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
     if not contest_id.isnumeric():
         contest_id = get_contest_id(contest_id)
 

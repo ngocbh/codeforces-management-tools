@@ -19,33 +19,35 @@ ss.get_logged_username() # get current username logging in codeforces
 ss.get() # get and log
 ss.post() # post
 
-conmato.member.is_manager(groupID=GROUP_ID, username='', password='')
-conmato.member.get_all_members(ss, groupID=GROUP_ID)
-conmato.member.get_pending_participants(ss, groupID=GROUP_ID)
-conmato.member.confirm_all_participants(ss, action, user_format=USER_FORMAT, groupID=GROUP_ID)
-conmato.member.remove_all_participants(ss, user_format='.*', groupID=GROUP_ID)
+conmato.member.is_manager(group_id=GROUP_ID, username='', password='')
+conmato.member.get_all_members(session, group_id=GROUP_ID)
+conmato.member.get_pending_participants(session, group_id=GROUP_ID)
+conmato.member.confirm_joining(session, member, action, group_id=GROUP_ID)
+conmato.member.confirm_all_participants(session, action, user_format=USER_FORMAT, group_id=GROUP_ID)
+remove_participants(session, member, group_id=GROUP_ID)
+conmato.member.remove_all_participants(session, user_format='.*', group_id=GROUP_ID)
 
-conmato.contest.get_managed_contests(ss, groupID=GROUP_ID) # get all contests and toggle manager mode for all contests
-conmato.contest.toggle_manager_mode(ss, contestid, groupID=GROUP_ID)
-conmato.contest.get_contests(ss, groupID=GROUP_ID)
-conmato.contest.get_contest_name(ss, contestID, groupID=GROUP_ID)
+conmato.contest.get_managed_contests(session, group_id=GROUP_ID) # get all contests and toggle manager mode for all contests
+conmato.contest.toggle_manager_mode(session, contest_id, group_id=GROUP_ID)
+conmato.contest.get_contests(session, group_id=GROUP_ID)
+conmato.contest.get_contest_name(session, contest_id, group_id=GROUP_ID)
 
 # get standings used codeforces api
-conmato.get_standings(contestID, usernames=None) # usernames is list of user example usernames=['43152676NgocDM','45164787LanPD']
+conmato.get_standings(contest_id, usernames=None) # usernames is list of user example usernames=['43152676NgocDM','45164787LanPD']
 
-conmato.get_standings_to_dataframe(contestID, usernames=None, penalty=True, get_name=False) # if get_name = True -> return dataframe, contestname else return dataframe
+conmato.get_standings_to_dataframe(contest_id, usernames=None, penalty=True, get_name=False) # if get_name = True -> return dataframe, contestname else return dataframe
 
-conmato.get_standings_to_csv(contestID, usernames=None, penalty=True, outdir=WORKING_DIR) # create file csv in outdir, return dataframe, contestname 
+conmato.get_standings_to_csv(contest_id, usernames=None, penalty=True, outdir=WORKING_DIR) # create file csv in outdir, return dataframe, contestname 
 
 # check plagiarism
-conmato.check_plagiarism(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT)
-conmato.crawl_checked_standings(ss, contestID, outdir=WORKING_DIR, groupID=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT)
+conmato.check_plagiarism(session, contest_id, output_dir=WORKING_DIR, group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT)
+conmato.crawl_checked_standings(session, contest_id, output_dir=WORKING_DIR, group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT)
 
 
-# Outdate apis
-conmato.crawl_standings_for_merge(ss, URL, user_format=r'.*', penalty=True,groupID=GROUP_ID) # see How to crawl standings for an existing student list
-conmato.crawl_standings(ss, URL, filepath, user_format=r'.*', penalty=True, only_dir=False, groupID=GROUP_ID) # crawl standing for url
-conmato.qcrawl(ss, urls, user_format, penalty, outdir=WORKING_DIR, groupID=GROUP_ID) # crawl list standings in urls
+# Deprecated apis
+conmato.crawl_standings_for_merge(ss, url, user_format=r'.*', penalty=True, group_id=GROUP_ID) # see How to crawl standings for an existing student list
+conmato.crawl_standings(session, url, filepath, user_format=r'.*', penalty=True, only_dir=False, group_id=GROUP_ID) # crawl standing for url
+conmato.qcrawl(session, urls, user_format, penalty, outdir=WORKING_DIR, group_id=GROUP_ID) # crawl list standings in urls
 ```
 
 ### How to crawl standings

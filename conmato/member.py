@@ -1,36 +1,43 @@
 from __future__ import absolute_import
-from pyquery import PyQuery as pq
-from .parameters import *
-from .utils import *
-import requests
-import pandas as pd
-import re, os
-import datetime
 
-def remove_participants(ss, member, groupID=GROUP_ID):
-    url = MEMBERS_URL.format(groupID)
+import re
+
+import requests
+import time 
+import random
+
+from .utils import *
+
+
+def remove_participants(session, member, group_id=GROUP_ID):
+    url = MEMBERS_URL.format(group_id)
     payload = {
         '_tta': member['_tta'],
         'action': 'removeMember',
         'csrf_token': member['csrf_token'],
         'memberGroupRoleId': member['groupRoleId']
     }
-    response = ss.post(url, data=payload)
+    response = session.post(url, data=payload)
     if response.status_code != 200:
         logger.warning('confirm_joining: an error occurred while confirming')
 
-def remove_all_participants(ss, user_format=r'.*', groupID=GROUP_ID):
-    members = get_all_members(ss, groupID)
+
+def remove_all_participants(session, user_format='.*', group_id=GROUP_ID):
+    members = get_all_members(session, group_id)
     for member in members:
-        if member['pending'] == True or member['role'] == 'manager':
+        if member['pending'] or member['role'] == 'manager':
             continue
-        if re.search(user_format,member['username']):
-            remove_participants(ss, member, groupID)
+        if re.search(user_format, member['username']):
+            remove_participants(session, member, group_id)
         se = random.uniform(float(TIMESLEEP)/2, TIMESLEEP)
         time.sleep(se)
 
-def confirm_joining(ss, member, action, groupID=GROUP_ID):
-    url = MEMBERS_URL.format(groupID)
+
+def confirm_joining(session, member, action, group_id=GROUP_ID):
+    """
+        action = ['accept', 'reject']
+    """
+    url = MEMBERS_URL.format(group_id)
     payload = {
         '_tta': member['_tta'],
         'action': 'confirmJoining',
@@ -38,62 +45,71 @@ def confirm_joining(ss, member, action, groupID=GROUP_ID):
         'csrf_token': member['csrf_token'],
         'groupRoleId': member['groupRoleId']
     }
-    response = ss.post(url, data=payload)
+    response = session.post(url, data=payload)
     if response.status_code != 200:
         logger.warning('confirm_joining: an error occurred while confirming')
 
 
-def confirm_all_participants(ss, action, user_format=USER_FORMAT, groupID=GROUP_ID):
+def confirm_all_participants(session, action, user_format=USER_FORMAT, group_id=GROUP_ID):
     """
         if action == 'accept' -> accept all user that match user_format
         if action == 'reject' -> reject all user that not match user_format
     """
-    members = get_pending_participants(ss, groupID)
+    members = get_pending_participants(session, group_id)
     if action != 'accept' and action != 'reject':
         logger.warning('confirm_all_participants: cannot recognize action')
         return
 
     for member in members:
-        if re.search(user_format,member['username']) and action == 'accept':
-            confirm_joining(ss, member, action, groupID)
-        elif not re.search(user_format,member['username']) and action == 'reject':
-            confirm_joining(ss, member, action, groupID)
+        if re.search(user_format, member['username']) and action == 'accept':
+            confirm_joining(session, member, action, group_id)
+        elif not re.search(user_format, member['username']) and action == 'reject':
+            confirm_joining(session, member, action, group_id)
         se = random.uniform(float(TIMESLEEP)/2, TIMESLEEP)
         time.sleep(se)
 
-def get_pending_participants(ss, groupID=GROUP_ID):
-    url = MEMBERS_URL.format(groupID)
-    response = ss.get(url)
+
+def get_pending_participants(session, group_id=GROUP_ID):
+    logger.info("Getting pending members of group: {}".format(group_id))
+    url = MEMBERS_URL.format(group_id)
+    response = session.get(url)
     doc = pq(response.text)
     table = doc('table').not_('.rtable').not_('.table-form')
 
     members = []
     for tr in pq(table.children())[1:]:
         if pq(tr).children().eq(5).children().eq(0).is_('form'):
-            member = {}
-            member['username'] = pq(tr).children().eq(0)('a').eq(0).text()
-            member['groupRoleId'] = pq(tr).children().eq(5).children().eq(0)('input').eq(2).attr('value')
-            member['csrf_token'] = pq(tr).children().eq(5).children().eq(0)('input').eq(0).attr('value')
-            member['_tta'] = 961
+            member = {
+                'username': pq(tr).children().eq(0)('a').eq(0).text(),
+                'groupRoleId': pq(tr).children().eq(5).children().eq(0)('input').eq(2).attr('value'),
+                'csrf_token': pq(tr).children().eq(5).children().eq(0)('input').eq(0).attr('value'),
+                '_tta': 961
+            }
             members.append(member)
 
     return members
 
-def get_all_members(ss, groupID=GROUP_ID):
-    url = MEMBERS_URL.format(groupID)
-    response = ss.get(url)
+
+def get_all_members(session, group_id=GROUP_ID):
+    logger.info("Getting all members in group: {}".format(group_id))
+    url = MEMBERS_URL.format(group_id)
+    response = session.get(url)
     doc = pq(response.text)
     table = doc('table').not_('.rtable').not_('.table-form')
 
     members = []
     for tr in pq(table.children())[1:]:
-        member = {}
-        member['username'] = pq(tr).children().eq(0)('a').eq(0).text()
+        member = {
+            'username': pq(tr).children().eq(0)('a').eq(0).text()
+        }
+
         if member['username'] == '':
             continue
-        
-        member['csrf_token'] = pq(tr).children().eq(0)('form')('input').eq(0).attr('value')
-        member['groupRoleId'] = pq(tr).children().eq(0)('form')('input').eq(2).attr('value')
+
+        member['csrf_token'] = pq(tr).children().eq(
+            0)('form')('input').eq(0).attr('value')
+        member['groupRoleId'] = pq(tr).children().eq(
+            0)('form')('input').eq(2).attr('value')
         member['_tta'] = 961
         if pq(tr).children().eq(5).children().eq(0).is_('form'):
             member['pending'] = True
@@ -102,28 +118,30 @@ def get_all_members(ss, groupID=GROUP_ID):
 
         if pq(tr).children().eq(1).text().lower() == 'creator':
             member['role'] = 'manager'
-        else: 
+        else:
             member['role'] = 'spectator'
         for option in pq(tr).children().eq(1)('select')('option'):
             if pq(option).attr['selected'] == 'selected':
                 member['role'] = pq(option).val().lower()
-    
-        members.append(member)
-    return members
-        
 
-def is_manager(groupID=GROUP_ID, username='', password=''):
+        members.append(member)
+
+    return members
+
+
+def is_manager(group_id=GROUP_ID, username='', password=''):
     """
         check if user is manager of codeforces group
         Return:
             True, False
-    """	
+    """
     if username == '' or password == '':
-        logger.warning("isManager:Please provide username and password before using.")
+        logger.warning(
+            "isManager:Please provide username and password before using.")
         return False
-    
+
     tmp_ss = requests.Session()
-    url = MEMBERS_URL.format(groupID)
+    url = MEMBERS_URL.format(group_id)
     response = tmp_ss.get(url)
     doc = pq(response.text)
     members = {}
@@ -146,18 +164,20 @@ def is_manager(groupID=GROUP_ID, username='', password=''):
     payload['csrf_token'] = doc('input').attr('value')
 
     response = tmp_ss.post(
-        LOGIN_URL, 
-        data = payload, 
-        headers = dict(referer=LOGIN_URL)
+        LOGIN_URL,
+        data=payload,
+        headers=dict(referer=LOGIN_URL)
     )
 
     doc = pq(response.text)
-    username_again = doc('div').filter('.lang-chooser').children().eq(1).children().eq(0).text()
-    if username_again == None or username.lower() != username_again.lower():
+    username_again = doc('div').filter(
+        '.lang-chooser').children().eq(1).children().eq(0).text()
+    if username_again is None or username.lower() != username_again.lower():
         logger.warning('isManager:Login failed, wrong username or password')
-        return False 
+        return False
 
     if username.lower() in members and members[username.lower()] == 'manager':
         return True
-    logger.warning('isManager:Username isnot members or manager of codeforces group')
+    logger.warning(
+        'isManager:Username isnot members or manager of codeforces group')
     return False

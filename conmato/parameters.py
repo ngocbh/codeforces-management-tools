@@ -4,6 +4,7 @@ WORKING_DIR = os.path.join(os.path.dirname(
     os.path.abspath(__file__)), '../data')
 
 LOGGING_FILE = os.path.join(WORKING_DIR, 'logs/build.log')
+SESSION_FILE = os.path.join(WORKING_DIR, 'session/session.pkl')
 
 # USERID in moss.standford.edu, to register check https://theory.stanford.edu/~aiken/moss/
 USERID = 203062946

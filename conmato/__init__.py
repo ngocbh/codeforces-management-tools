@@ -6,3 +6,5 @@ from .utils import *
 from .csession import *
 from . import member
 from . import contest
+
+from .cli import *

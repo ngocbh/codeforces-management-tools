@@ -8,6 +8,8 @@ import re
 import os
 import datetime
 import logging
+import pickle
+import sys
 
 # logging.basicConfig(filename=LOGGING_FILE,level=logging.level)
 from logging.handlers import RotatingFileHandler
@@ -89,3 +91,11 @@ def decode(encode_data):
 
 def clear_logging_file():
     open(LOGGING_FILE, 'w').close()
+
+def load_session(session_file):
+    with open(SESSION_FILE, 'rb') as f:
+        ss = pickle.load(f)
+    if ss.get_logged_username() == None:
+        print("Session time out! Please login again!", file=sys.stderr)
+        sys.exit(-1)
+    return ss

@@ -13,7 +13,6 @@ import click
 import sys
 import pickle
 import json
-from pprint import pprint
 
 @click.group()
 def cli():
@@ -69,26 +68,41 @@ def member():
 def member_is_manager(group_id, username, password):
     print(is_manager(group_id, username, password))
 
-@member.command('get-all', help='Get all members in a group.')
+@member.command('get', help='Get members in a group.')
 @click.option(
     '--group-id', '-g', required=True,
     help='Group id in Codeforces.com'
 )
 @click.option(
     '--output-file', '-o', 
-    help='Filepath to store all members in a group.'
+    help='CSV file path to store all members in a group.'
 )
-def member_get_all(group_id, output_file=None):
-    ss = load_session(SESSION_FILE)
-    # print(output_file)
-    all_members = get_all_members(ss, group_id)
-    if output_file != None:
-        # indent=4,
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(all_members, f, indent=4)
-        print('All members was written to {} successfully'.format(output_file))
+@click.option(
+    '--all', '-a', is_flag=True,
+    help='Get all members in a group.'
+)
+@click.option(
+    '--pending', '-pe', is_flag=True,
+    help='Get pending participants in a group.'
+)
+def get(all, pending, group_id, output_file=None):
+    if not all and not pending:
+        print("Error: Missing option '--all' / '-a' or '--pending' / '-pe'", file=sys.stderr)
     else:
-        pprint(all_members)
+        ss = load_session(SESSION_FILE)
+        if pending:
+            members = get_pending_participants(ss, group_id)
+        else:
+            members = get_all_members(ss, group_id)
+        if output_file != None:
+            try:
+                to_df(members).to_csv(output_file)
+                print('Members was written to {} successfully'.format(output_file))
+            except FileNotFoundError:
+                print("Failed to write to file\nNo such file or directory: {}".format(output_file), file=sys.stderr)
+                sys.exit(-1)
+        else:
+            print(to_df(members))
 
 if __name__ == "__main__":
     cli()

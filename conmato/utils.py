@@ -99,3 +99,6 @@ def load_session(session_file):
         print("Session time out! Please login again!", file=sys.stderr)
         sys.exit(-1)
     return ss
+
+def to_df(list_of_dict):
+    return pd.DataFrame(list_of_dict)

@@ -21,7 +21,8 @@ CRAWLED = set()
 session = requests.Session()
 
 
-def get_standings(contest_id, usernames=None):
+def get_standings(contest_id, usernames=None, user_format=None):
+    # print('get_standings user_format = ', user_format)
     """
         usernames is list of usernames
         ex: usernames = ['abasf', 'adfjsdfkas']
@@ -93,12 +94,12 @@ def get_standings(contest_id, usernames=None):
         else:
             used_row['lastSubmissionTimeSeconds'] = 0
 
-        if usernames != None:
-            if used_row['handles'].lower() in usernames:
+        if user_format != None and re.match(user_format, used_row['handles']):
+            if usernames != None:
+                if used_row['handles'].lower() in usernames:
+                    standings['rows'].append(used_row)
+            else:
                 standings['rows'].append(used_row)
-        else:
-            standings['rows'].append(used_row)
-
     # print(json.dumps(standings, indent=2))
     return standings
 

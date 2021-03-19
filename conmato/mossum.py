@@ -189,8 +189,9 @@ def summarize(urls, outdir, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
     for name, url in urls.items():
         if not basefile:
             basefile = get_basefile(url)
-        res = get_results(basefile, name, url,
-                          min_lines=min_lines, min_percent=min_percent)
+        # res = get_results(basefile, name, url,
+        #                   min_lines=min_lines, min_percent=min_percent)
+        res = get_results(basefile, name, url)
         all_res.append(res)
 
     filepath = os.path.join(outdir, 'summarized_report.html')

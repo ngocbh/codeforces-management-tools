@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from pyquery import PyQuery as pq
 from .parameters import *
+# from .csession import CSession
 
 import requests
 import pandas as pd
@@ -10,6 +11,7 @@ import datetime
 import logging
 import pickle
 import sys
+from getpass import getpass
 
 # logging.basicConfig(filename=LOGGING_FILE,level=logging.level)
 from logging.handlers import RotatingFileHandler
@@ -82,7 +84,6 @@ def get_contest_id(url):
     else:
         raise Exception('An error occur when getting contest id')
 
-
 def decode(encode_data):
     decoded = ''
     for char in encode_data:
@@ -91,14 +92,6 @@ def decode(encode_data):
 
 def clear_logging_file():
     open(LOGGING_FILE, 'w').close()
-
-def load_session(session_file):
-    with open(SESSION_FILE, 'rb') as f:
-        ss = pickle.load(f)
-    if ss.get_logged_username() == None:
-        print("Session time out! Please login again!", file=sys.stderr)
-        sys.exit(-1)
-    return ss
 
 def to_df(list_of_dict):
     return pd.DataFrame(list_of_dict)

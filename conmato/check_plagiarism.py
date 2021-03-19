@@ -16,6 +16,7 @@ import time
 import codecs
 import mosspy
 import random
+from tqdm import tqdm
 
 CRAWLED = set()
 
@@ -91,7 +92,7 @@ def get_score(data):
     return '0'
 
 
-def get_all_submission(session, url, output_dir, group_id=GROUP_ID):
+def get_all_submission(session, url, output_dir, group_id=GROUP_ID, page=1, user_format=None):
     if url.isnumeric():
         contest_id = url
         url = get_status_url(contest_id, group_id=group_id)
@@ -104,8 +105,7 @@ def get_all_submission(session, url, output_dir, group_id=GROUP_ID):
 
     doc = pq(response.text)
     table = doc('div').filter('.datatable')
-
-    for row_e in table.find('tr'):
+    for row_e in tqdm(table.find('tr'), desc='Getting page '+str(page), unit=' submissions'):
         if pq(table(row_e)).attr['data-submission-id'] is not None:
             # crawl_checked submission data
             data = {'code': '', 'username': '', 'lang': '', 'score': '', 'problem': ''}
@@ -115,13 +115,16 @@ def get_all_submission(session, url, output_dir, group_id=GROUP_ID):
             next(iter_cell)
             cell = next(iter_cell)
             data['username'] = get_username(table(cell))
+            # Check user-format
+            if user_format != None and not re.match(user_format, data['username']):
+                continue
             cell = next(iter_cell)
             data['problem'] = get_problem(table(cell))
             cell = next(iter_cell)
             data['lang'] = get_language(table(cell))
             cell = next(iter_cell)
             data['score'] = get_score(table(cell))
-            filename = 'submission/{}/{}/{}_{}.{}'.format(contest_id, data['problem'], data['username'], data['score'],
+            filename = 'submission_{}/{}/{}_{}.{}'.format(contest_id, data['problem'], data['username'], data['score'],
                                                           data['lang'])
             filepath = os.path.join(output_dir, filename)
 
@@ -162,7 +165,7 @@ def get_all_submission(session, url, output_dir, group_id=GROUP_ID):
     next_page = get_next_page(doc)
     url = '{}{}'.format(CODEFORCES_URI, next_page)
     if url not in CRAWLED:
-        get_all_submission(session, url, output_dir, group_id)
+        get_all_submission(session, url, output_dir, group_id, page+1, user_format)
 
 
 def send_to_moss(contest_id, output_dir, problem_dir, problem, lang):
@@ -193,7 +196,7 @@ def send_to_moss(contest_id, output_dir, problem_dir, problem, lang):
     print("Report Url: " + res_url)
     # create directory
     report_file = os.path.join(
-        output_dir, "report/{}/{}_{}.html".format(contest_id, problem, lang))
+        output_dir, "../plagiarism_report_{}/{}_{}.html".format(contest_id, problem, lang))
     create_dir(report_file)
     moss.saveWebPage(res_url, report_file)
     print("Saved report to {}".format(report_file))
@@ -216,21 +219,22 @@ def check_problem(contest_id, output_dir, problem_dir, problem):
     return result
 
 
-def check_plagiarism(session, contest_id, output_dir=WORKING_DIR, group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
+def check_plagiarism(session, contest_id, output_dir=WORKING_DIR, group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT, is_cli=False):
     if not contest_id.isnumeric():
         contest_id = get_contest_id(contest_id)
-
-    get_all_submission(session, contest_id, output_dir, group_id=group_id)
+    if is_cli:
+        problem_dir = output_dir
+    else:
+        get_all_submission(session, contest_id, output_dir, group_id=group_id)
+        problem_dir = os.path.join(output_dir, 'submission/{}'.format(contest_id))
 
     urls = {}
 
-    problem_dir = os.path.join(output_dir, 'submission/{}'.format(contest_id))
     for problem in os.listdir(problem_dir):
         urls.update(check_problem(
             contest_id, output_dir, problem_dir, problem))
-
     row_list = summarize(urls, os.path.join(
-        output_dir, 'report/{}'.format(contest_id)), min_lines=min_lines, min_percent=min_percent)
+        output_dir, '../plagiarism_report_{}'.format(contest_id)), min_lines=min_lines, min_percent=min_percent)
     print('Checked plagiarism')
     return row_list
 
@@ -242,19 +246,20 @@ def compute_total_score(row, problem_list):
     return total_score
 
 
-def crawl_checked_standings(session, contest_id, output_dir=WORKING_DIR, group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT):
+def crawl_checked_standings(session, contest_id, output_dir=WORKING_DIR, group_id=GROUP_ID, min_lines=MIN_LINES, min_percent=MIN_PERCENT, is_cli=False):
     # contest_name = get_contest_name(session, contest_id)
     # df = crawl_standings(session, contest_id, output_dir, only_dir=True)
     df = get_standings_to_dataframe(contest_id)
     
     filepath = os.path.join(
-        output_dir, 'report/{}/{}.csv'.format(contest_id, contest_id))
+        output_dir, '../plagiarism_stadings_report_{}/{}.csv'.format(contest_id, contest_id))
+        # output_dir, 'report/{}/{}.csv'.format(contest_id, contest_id))
     create_dir(filepath)
     df.to_csv(filepath, index=True)
 
     row_list = check_plagiarism(session, contest_id, output_dir,
-                                group_id=group_id, min_lines=min_lines, min_percent=min_percent)
-    for row in row_list:
+                                group_id=group_id, min_lines=min_lines, min_percent=min_percent, is_cli=is_cli)
+    for row in tqdm(row_list):
         if not df.loc[(df['Who'] == row['username']), row['problem']].any():
             continue
         if df.loc[(df['Who'] == row['username']), row['problem']].values[0] == float(row['score']):
@@ -278,12 +283,16 @@ def crawl_checked_standings(session, contest_id, output_dir=WORKING_DIR, group_i
 
     df = df.reset_index(drop=True)
 
+    # filepath = os.path.join(
+    #     output_dir, 'results/{}-checked.csv'.format(contest_id))
+    # create_dir(filepath)
+    # df.to_csv(filepath, index=True)
+    # filepath = os.path.join(
+    #     output_dir, 'report/{}/{}-checked.csv'.format(contest_id, contest_id))
+    # create_dir(filepath)
+    # df.to_csv(filepath, index=True)
     filepath = os.path.join(
-        output_dir, 'results/{}-checked.csv'.format(contest_id))
-    create_dir(filepath)
-    df.to_csv(filepath, index=True)
-    filepath = os.path.join(
-        output_dir, 'report/{}/{}-checked.csv'.format(contest_id, contest_id))
+        output_dir, '../plagiarism_stadings_report_{}/{}-checked.csv'.format(contest_id, contest_id))
     create_dir(filepath)
     df.to_csv(filepath, index=True)
     print('Done!!! results was stored at {}'.format(filepath))

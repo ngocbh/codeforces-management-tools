@@ -1,13 +1,13 @@
 from __future__ import absolute_import
 
-from .check_plagiarism import *
-from .contest import *
-from .crawl_standings import *
-from .csession import *
-from .member import *
-from .mossum import *
-from .parameters import *
-from .utils import *
+from conmato.check_plagiarism import *
+from conmato.contest import *
+from conmato.crawl_standings import *
+from conmato.csession import *
+from conmato.member import *
+from conmato.mossum import *
+from conmato.parameters import *
+from conmato.utils import *
 
 import os
 import click
@@ -17,34 +17,23 @@ import json
 import yaml
 from tqdm import tqdm
 
-def standing_to_df(standings):
-    prob_names = [p['index']+'('+p['name']+')' for p in standings['problems']]
-    standing_list = []
-    for row in standings['rows']:
-        a_standing = {'Who':row['handles']}
-        for i, prob in enumerate(row['problemResults']):
-            a_standing[prob_names[i]] = prob['points']
-        standing_list.append(a_standing)
-    standing_df = pd.DataFrame(standing_list)
-    return standing_df
-
 @click.group()
 def cli():
     pass
 
 @cli.command('config', help='Config command.')
 @click.option(
+    '--reset', '-rs', is_flag=True,
+    help='Reset config file to default values.'
+)
+@click.option(
+    '--show', '-s', is_flag=True,
+    help="Show all parameters in user's config file."
+)
+@click.option(
     '--group-id', '-g', default=None, 
     help='Group id in Codeforces.com.'
 )
-# @click.option(
-#     '--contest-id', '-c', 
-#     help='Contest id in Codeforces.com'
-# )
-# @click.option(
-#     '--user-format', '-f', 
-#     help='User format.'
-# )
 @click.option(
     '--min-lines', '-ml', type=int,
     help='Min similar lines between two files.'
@@ -54,36 +43,80 @@ def cli():
     help='Min percent between two files.'
 )
 @click.option(
-    '--output-dir', '-o', 
-    help='Working directory.'
+    '--user-id', '-uid', type=int,
+    help='User id in moss.standford.edu, to register check https://theory.stanford.edu/~aiken/moss/.'
 )
 @click.option(
-    '--reset', '-rs', is_flag=True,
-    help='Reset config file to default values.')
-def config(group_id, # contest_id, user_format, 
-    min_lines, min_percent, output_dir, reset):
+    '--transformer', '-tr', 
+    help='A regular expression that is used to transform the name of them matched files.'
+)
+@click.option(
+    '--new-score', '-ns', 
+    help='Assign new score to cheating submission.'
+)
+@click.option(
+    '--default-username', '-du', 
+    help='Default username.'
+)
+@click.option(
+    '--default-password', '-dp', 
+    help='Default password.'
+)
+@click.option(
+    '--user-key', '-uk', 
+    help='Get key here http://codeforces.com/settings/api.'
+)
+@click.option(
+    '--user-secret', '-us', 
+    help='Get sceret here http://codeforces.com/settings/api.'
+)
+@click.option(
+    '--timesleep', '-ts', type=int,
+    help='Time sleep.'
+)
+def config(reset, show, group_id, min_lines, min_percent, 
+    user_id, transformer, new_score, default_username, 
+    default_password, user_key, user_secret, timesleep):
     if reset:
-        config = {'group_id':None, 'min_lines':10, 'min_percent':90, 'output_dir':None}
-        with open(CONFIG_FILE, 'w') as file:
-            yaml.dump(config, file)
+        with open(USER_CONFIG_FILE, 'w') as file:
+            yaml.dump(None, file)
         print('Successfully reset config file.')
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
+
+    with open(USER_CONFIG_FILE) as file:
+        config = yaml.full_load(file) or {}
     if group_id != None:
         config['group_id'] = group_id
-    # if contest_id != None:
-    #     config['contest_id'] = contest_id
-    # if user_format != None:
-    #     config['user_format'] = user_format
     if min_lines != None:
         config['min_lines'] = min_lines
     if min_percent != None:
         config['min_percent'] = min_percent
-    if output_dir != None:
-        config['output_dir'] = output_dir
-    with open(CONFIG_FILE, 'w') as file:
+    if user_id != None:
+        config['user_id'] = user_id
+    if transformer != None:
+        config['transformer'] = transformer
+    if new_score != None:
+        config['new_score'] = new_score
+    if default_username != None:
+        config['default_username'] = default_username
+    if default_password != None:
+        config['default_password'] = default_password
+    if user_key != None:
+        config['user_key'] = user_key
+    if user_secret != None:
+        config['user_secret'] = user_secret
+    if timesleep != None:
+        config['timesleep'] = timesleep
+    with open(USER_CONFIG_FILE, 'w') as file:
         yaml.dump(config, file)
-    print('Successfully updated config file.')
+    # print('Successfully updated config file.')
+
+    if show:
+        print("All parameters in user's config file:")
+        if not config:
+            print()
+        else:
+            for k, v in config.items():
+                print('{}: {}'.format(k, v))
 
 @cli.command('login', help='Login command.')
 @click.option(
@@ -121,13 +154,10 @@ def member():
     '--password', '-p', required=True,
     help='Password in Codeforces.com.'
 )
-def member_is_manager(group_id, username, password):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    if group_id == None:
+def is_manager(group_id, username, password):
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
         print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
     print(is_manager(group_id, username, password))
@@ -151,12 +181,9 @@ def member_is_manager(group_id, username, password):
     help='Accept or reject users.'
 )
 def confirm(group_id, action, input_file, user_format):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    if group_id == None:
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
         print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
@@ -183,7 +210,7 @@ def confirm(group_id, action, input_file, user_format):
     ans = input()
     if ans.strip().lower() == 'y':
         members = members_df.to_dict('records')
-        for member in tqdm(members, desc='Confirming member(s)', unit=' members'):
+        for member in tqdm(members, desc='Confirming members', unit=' members'):
             confirm_joining(ss, member, action, group_id)
         print('Successfully {}ed {} user(s)'.format(action, len(members_df)))
 
@@ -201,12 +228,9 @@ def confirm(group_id, action, input_file, user_format):
     help='Group id in Codeforces.com.'
 )
 def remove(group_id, input_file, user_format):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    if group_id == None:
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
         print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
@@ -247,14 +271,11 @@ def contest():
     help='Group id in Codeforces.com.'
 )
 def ls(group_id):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-        else:
-            print("group-id not found in the command or config file.", file=sys.stderr)
-            sys.exit(-1)
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
+        print("group-id not found in the command or config file.", file=sys.stderr)
+        sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
 
     contests = get_contests(ss, group_id)
@@ -285,15 +306,9 @@ def register(group_id):
     help='true for Yes, false for No.'
 )
 def manage(group_id, contest_id, mode):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    # if contest_id == None:
-    #     if config['contest_id'] != None:
-    #         contest_id = config['contest_id']
-    if group_id == None:
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
         print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
@@ -307,6 +322,7 @@ def manage(group_id, contest_id, mode):
     for contest_id in contest_ids:
         print('Successfully changed manage mode at contest {} in group {}.'
             .format(contest_id, group_id, mode))
+
 # Plagiarism commands 
 @cli.group(help='Plagiarism commands.')
 def plagiarism():
@@ -333,41 +349,29 @@ def plagiarism():
     '--submission-dir', '-sd', required=True,
     help='Submission directory (output dir from "get submission" command).'
 )
-# @click.option(
-#     '--output-dir', '-o', 
-#     help='Output directory.'
-# )
-def check(group_id, contest_id, min_lines, min_percent, submission_dir):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    # if contest_id == None:
-    #     if config['contest_id'] != None:
-    #         contest_id = config['contest_id']
-    if min_lines == None:
-        if config['min_lines'] != None:
-            min_lines = config['min_lines']
-        else:
-            min_lines = 0
-    if min_percent == None:
-        if config['min_percent'] != None:
-            min_percent = config['min_percent']
-        else:
-            min_percent = 0
-    if group_id == None:
+@click.option(
+    '--output-dir', '-o', 
+    help='Output directory.'
+)
+def check(group_id, contest_id, min_lines, min_percent, submission_dir, output_dir):
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
         print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
+    if not min_lines and MIN_LINES:
+        min_lines = MIN_LINES
+    if not min_percent and MIN_PERCENT:
+        min_percent = MIN_PERCENT
+    if not output_dir:
+        output_dir = './'
     ss = CSession.load_session(SESSION_FILE)
 
     print("Checking plagiarism".format(contest_id, group_id))
-    res = check_plagiarism(ss, contest_id, submission_dir, group_id, min_lines, min_percent, True)
-    if res:
-        print(pd.DataFrame(res).to_string())
-    else:
-        print('There is no submissions found in plagiarism check.')
-    print("Successfully checked plagiarism.".format(contest_id, group_id))
+    check_plagiarism(ss, contest_id, submission_dir, group_id, min_lines, min_percent, True, output_dir)
+    outdir = os.path.join(output_dir, 'plagiarism_report_{}'.format(contest_id))
+    print("Successfully saved plagiarism checking report of contest {} of group {} in directory: {}.".\
+        format(contest_id, group_id, outdir))
 
 @cli.group(help='Get commands.')
 def get():
@@ -386,7 +390,7 @@ def username():
 @click.option(
     '--type', '-t', multiple=True,
     type=click.Choice(['all','pending', 'spectator', 'manager', 'participant'], case_sensitive=False),
-    help='Get all members or pending participants in a group.'
+    help='Get members in a group.'
 )
 @click.option(
     '--user-format', '-f', 
@@ -397,15 +401,9 @@ def username():
     help='Output directory.'
 )
 def member(group_id, type, user_format, output_dir):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    if output_dir == None:
-        if config['output_dir'] != None:
-            output_dir = config['output_dir']
-    if group_id == None:
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
         print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
@@ -443,7 +441,7 @@ def member(group_id, type, user_format, output_dir):
         output_file = os.path.join(output_dir,'members_{}_{}.csv'.format(group_id, '_'.join(type)))
         create_dir(output_file)
         result_df.to_csv(output_file, index=False)
-        print('Members was written to {} successfully'.format(output_file))
+        print('Successfully saved members in group id {} to {}'.format(group_id, output_file))
     else:
         if result_df.empty:
             print('There is no members!')
@@ -464,20 +462,13 @@ def member(group_id, type, user_format, output_dir):
     help='Output directory.'
 )
 def contest(group_id=None, contest_id=None, output_dir=None):
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    # if contest_id == None:
-    #     if config['contest_id'] != None:
-    #         contest_id = config['contest_id']
-    if output_dir == None:
-        if config['output_dir'] != None:
-            output_dir = config['output_dir']
-    if group_id == None or contest_id == None or output_dir == None:
-        print("group-id or contest-id or output-dir not found in the command or config file.", file=sys.stderr)
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
+        print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
+    if not output_dir:
+        output_dir = './'
     ss = CSession.load_session(SESSION_FILE)
 
     members = get_all_members(ss, group_id)
@@ -485,20 +476,22 @@ def contest(group_id=None, contest_id=None, output_dir=None):
     members_df = members_df[members_df['pending']==False]
     standings = get_standings(contest_id, usernames=members_df['username'].to_list())
     standing_df = standing_to_df(standings)
+
     # Saving standings file
     contest_name = get_contest_name(ss, contest_id, group_id)
-    # print(contest_name)
-    standings_file = os.path.join(output_dir, 'contest_{}_{}({})/standings.csv'.format(
+    standings_file = os.path.join(output_dir, 'contest_{}_{}-{}/standings.csv'.format(
         group_id, contest_id, contest_name))
     create_dir(standings_file)
     standing_df.to_csv(standings_file, index=False)
-    print('Standings was written to {} successfully'.format(standings_file))
+    # print('Standings was written to {} successfully'.format(standings_file))
 
+    # Saving submission  file
     print("Getting all submission from contest {} in group {}".format(contest_id, group_id))
-    new_output_dir = os.path.join(output_dir, 'contest_{}_{}({})'.format(
+    new_output_dir = os.path.join(output_dir, 'contest_{}_{}-{}'.format(
         group_id, contest_id, contest_name))
     get_all_submission(ss, contest_id, new_output_dir, group_id)
-    print("Successfully getting all submission from contest {} in group {}".format(contest_id, group_id))
+    print("Successfully saved contest {} in group {} to directory: {}".
+        format(contest_id, group_id, new_output_dir))
 
 @get.command('standings', help='Get standing in a contest.')
 @click.option(
@@ -509,10 +502,6 @@ def contest(group_id=None, contest_id=None, output_dir=None):
     '--contest-id', '-c', required=True,
     help='Contest id in Codeforces.com.'
 )
-# @click.option(
-#     '--username-list', '-ul', 
-#     help='List of username'
-# )
 @click.option(
     '--user-format', '-f', 
     help='User format.'
@@ -525,22 +514,15 @@ def contest(group_id=None, contest_id=None, output_dir=None):
     help='Output directory.'
 )
 def standings(group_id, contest_id, user_format, common, output_dir):
-    ss = CSession.load_session(SESSION_FILE)
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    # if contest_id == None:
-    #     if config['contest_id'] != None:
-    #         contest_id = config['contest_id']
-    if output_dir == None:
-        if config['output_dir'] != None:
-            output_dir = config['output_dir']
-    if group_id == None and not common:
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id and not common:
         print("group-id not found in the command or config file.\n" + \
             "Please provide group id or use '--common'/'-cm' flag to get common standings.", file=sys.stderr)
         sys.exit(-1)
+    # if not output_dir:
+    #     output_dir = './'
+    ss = CSession.load_session(SESSION_FILE)
 
     if common:
         standings = get_standings(contest_id, usernames=None, user_format=user_format)
@@ -561,7 +543,7 @@ def standings(group_id, contest_id, user_format, common, output_dir):
         output_file = os.path.join(output_dir, 'standings_{}_{}.csv'.format(name, contest_id))
         create_dir(output_file)
         standing_df.to_csv(output_file, index=False)
-        print('Standings was written to {} successfully'.format(output_file))
+        print('Successfully saved standings {} successfully'.format(output_file))
     else:
         print(standing_df.to_string())
 
@@ -583,24 +565,20 @@ def standings(group_id, contest_id, user_format, common, output_dir):
     help='Output directory.'
 )
 def submission(group_id, contest_id, user_format, output_dir):
-    ss = CSession.load_session(SESSION_FILE)
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id'] 
-    # if contest_id == None:
-    #     if config['contest_id'] != None:
-    #         contest_id = config['contest_id']
-    if output_dir == None:
-        if config['output_dir'] != None:
-            output_dir = config['output_dir']
-    if group_id == None or output_dir == None:
-        print("group-id or output-dir not found in the command or config file.", file=sys.stderr)
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
+        print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
+    if not output_dir:
+        output_dir = './'
+    ss = CSession.load_session(SESSION_FILE)
+
     print("Getting all submission from contest {} in group {}".format(contest_id, group_id))
     get_all_submission(ss, contest_id, output_dir, group_id, page=1, user_format=user_format)
-    print("Successfully getting all submission from contest {} in group {}".format(contest_id, group_id))
+    outdir = os.path.join(output_dir, 'submission_{}'.format(contest_id))
+    print("Successfully saved all submission from contest {} in group {} to directory: {}".
+        format(contest_id, group_id, outdir))
 
 @get.command('pstandings', help='Get all standing with plagiarism in a contest.')
 @click.option(
@@ -620,39 +598,32 @@ def submission(group_id, contest_id, user_format, output_dir):
     help='Min percent between two files.'
 )
 @click.option(
+    '--submission-dir', '-sd', required=True,
+    help='Submission directory (output dir from "get submission" command).'
+)
+@click.option(
     '--output-dir', '-o', 
     help='Output directory.'
 )
-def pstandings(group_id=None, contest_id=None, 
-    min_lines=None, min_percent=None, output_dir=None):
-    ss = CSession.load_session(SESSION_FILE)
-    with open(CONFIG_FILE) as file:
-        config = yaml.full_load(file)
-    if group_id == None:
-        if config['group_id'] != None:
-            group_id = config['group_id']
-    # if contest_id == None:
-    #     if config['contest_id'] != None:
-    #         contest_id = config['contest_id']
-    if min_lines == None:
-        if config['min_lines'] != None:
-            min_lines = config['min_lines']
-        else:
-            min_lines = 0
-    if min_percent == None:
-        if config['min_percent'] != None:
-            min_percent = config['min_percent']
-        else:
-            min_percent = 0
-    if output_dir == None:
-        if config['output_dir'] != None:
-            output_dir = config['output_dir']
-    if group_id == None or output_dir == None:
-        print("group-id or output-dir not found in the command or config file.", file=sys.stderr)
+def pstandings(group_id, contest_id, min_lines, min_percent, submission_dir, output_dir):
+    if not group_id and GROUP_ID:
+        group_id = GROUP_ID
+    if not group_id:
+        print("group-id not found in the command or config file.", file=sys.stderr)
         sys.exit(-1)
+    if not min_lines and MIN_LINES:
+        min_lines = MIN_LINES
+    if not min_percent and MIN_PERCENT:
+        min_percent = MIN_PERCENT
+    if not output_dir:
+        output_dir = './'
+    ss = CSession.load_session(SESSION_FILE)
+
     print("Crawling checked standings from contest {} in group {}".format(contest_id, group_id))
-    crawl_checked_standings(ss, contest_id, output_dir, group_id, min_lines, min_percent, True)
-    print("Successfully Crawling checked standings from contest {} in group {}!".format(contest_id, group_id))
+    crawl_checked_standings(ss, contest_id, submission_dir, group_id, min_lines, min_percent, True, output_dir)
+    outdir = os.path.join(output_dir, 'plagiarism_stadings_report_{}'.format(contest_id))
+    print("Successfully crawled checked standings from contest {} in group {} to directory: {}".
+        format(contest_id, group_id, outdir))
 
 if __name__ == "__main__":
     cli()

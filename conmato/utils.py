@@ -95,3 +95,14 @@ def clear_logging_file():
 
 def to_df(list_of_dict):
     return pd.DataFrame(list_of_dict)
+
+def standing_to_df(standings):
+    prob_names = [p['index']+'('+p['name']+')' for p in standings['problems']]
+    standing_list = []
+    for row in standings['rows']:
+        a_standing = {'Who':row['handles']}
+        for i, prob in enumerate(row['problemResults']):
+            a_standing[prob_names[i]] = prob['points']
+        standing_list.append(a_standing)
+    standing_df = pd.DataFrame(standing_list)
+    return standing_df

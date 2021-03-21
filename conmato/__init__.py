@@ -1,10 +1,11 @@
 from __future__ import absolute_import
 
-from .check_plagiarism import *
-from .crawl_standings import *
-from .utils import *
-from .csession import *
-from . import member
-from . import contest
+from conmato.check_plagiarism import *
+from conmato.crawl_standings import *
+from conmato.utils import *
+from conmato.mossum import *
+from conmato.csession import *
+from conmato import member
+from conmato import contest
 
 from .cli import cli

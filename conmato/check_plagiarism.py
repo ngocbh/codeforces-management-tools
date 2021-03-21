@@ -1,12 +1,12 @@
 from __future__ import absolute_import
 from pyquery import PyQuery as pq
 
-from .utils import *
-from .parameters import *
-from .mossum import *
-from .crawl_standings import *
-from .csession import *
-from .contest import get_all_submission
+from conmato.utils import *
+from conmato.parameters import *
+from conmato.mossum import *
+from conmato.crawl_standings import *
+from conmato.csession import *
+from conmato.contest import get_all_submission
 
 import requests
 import pandas as pd

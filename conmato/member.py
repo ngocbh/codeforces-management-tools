@@ -6,7 +6,7 @@ import requests
 import time 
 import random
 
-from .utils import *
+from conmato.utils import *
 
 
 def remove_participants(session, member, group_id=GROUP_ID):

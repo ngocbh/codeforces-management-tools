@@ -2,9 +2,9 @@ from __future__ import absolute_import
 from pyquery import PyQuery as pq
 from lxml import html
 
-from .utils import *
-from .parameters import *
-from .csession import *
+from conmato.utils import *
+from conmato.parameters import *
+from conmato.csession import *
 # from .check_plagiarism import *
 
 import requests

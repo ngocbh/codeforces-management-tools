@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import requests
 
-from .utils import *
+from conmato.utils import *
 
 
 

@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 from pyquery import PyQuery as pq
 
-from .utils import *
-from .parameters import *
+from conmato.utils import *
+from conmato.parameters import *
 
 import requests
 import pandas as pd

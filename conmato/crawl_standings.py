@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 from pyquery import PyQuery as pq
 
-from .utils import *
-from .parameters import *
-# from .check_plagiarism import *
-from .contest import get_contest_name
+from conmato.utils import *
+from conmato.parameters import *
+# from conmato.check_plagiarism import *
+from conmato.contest import get_contest_name
 
 import requests
 import pandas as pd

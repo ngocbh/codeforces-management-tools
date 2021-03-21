@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from pyquery import PyQuery as pq
-from .parameters import *
-# from .csession import CSession
+from conmato.parameters import *
+# from conmato.csession import CSession
 
 import requests
 import pandas as pd

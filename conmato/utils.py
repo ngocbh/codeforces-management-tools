@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from pyquery import PyQuery as pq
 from .parameters import *
+# from .csession import CSession
 
 import requests
 import pandas as pd
@@ -8,6 +9,9 @@ import re
 import os
 import datetime
 import logging
+import pickle
+import sys
+from getpass import getpass
 
 # logging.basicConfig(filename=LOGGING_FILE,level=logging.level)
 from logging.handlers import RotatingFileHandler
@@ -80,7 +84,6 @@ def get_contest_id(url):
     else:
         raise Exception('An error occur when getting contest id')
 
-
 def decode(encode_data):
     decoded = ''
     for char in encode_data:
@@ -89,3 +92,17 @@ def decode(encode_data):
 
 def clear_logging_file():
     open(LOGGING_FILE, 'w').close()
+
+def to_df(list_of_dict):
+    return pd.DataFrame(list_of_dict)
+
+def standing_to_df(standings):
+    prob_names = [p['index']+'('+p['name']+')' for p in standings['problems']]
+    standing_list = []
+    for row in standings['rows']:
+        a_standing = {'Who':row['handles']}
+        for i, prob in enumerate(row['problemResults']):
+            a_standing[prob_names[i]] = prob['points']
+        standing_list.append(a_standing)
+    standing_df = pd.DataFrame(standing_list)
+    return standing_df

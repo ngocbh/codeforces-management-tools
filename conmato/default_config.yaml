@@ -1,0 +1,15 @@
+group_id: 'Ir5CI6f3FD'
+userid: 203062946
+min_lines: 10
+min_percent: 90
+transformer: r'.*'
+new_score: -1  
+virtualization: True  
+user_format: r'^[0-9]{8,10}[A-Za-z]{4,10}$'
+timesleep: 1
+default_username: '21431252KbjfGM'
+default_password: '4761032=<'
+user_key: '757e4de2c3d19ff5a823003bbfa108aaab96d834'
+user_secret: '12872454ac44ec1bc0ada71a12bf186397ee7438'
+
+

@@ -5,6 +5,7 @@ import requests
 from .utils import *
 
 
+
 class CSession(requests.Session):
     """
         is_manager: check if use is manger of codeforces group
@@ -83,3 +84,25 @@ class CSession(requests.Session):
         if username_again == 'Enter' or username_again.lower() != username.lower():
             return 'Login failed while logging in by default user'
         return "Login successfully"
+
+    @staticmethod
+    def load_session(session_file):
+        try:
+            with open(SESSION_FILE, 'rb') as f:
+                ss = pickle.load(f)
+            if ss.get_logged_username() != None:
+                return ss
+            # else:
+            #     print("Session time out! Please login again!", file=sys.stderr)
+        except (AttributeError, FileNotFoundError):
+            print("Session time out! Please login again!", file=sys.stderr)
+        ss = CSession()
+        while True:
+            username = input('Username: ')
+            password = getpass('Password: ')
+            status = ss.login(username, password)
+            if status != "Login successfully":
+                print('Login failed! Please try again!')
+            else:
+                break
+        return ss 

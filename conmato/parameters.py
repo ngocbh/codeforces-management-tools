@@ -1,13 +1,20 @@
 import os
 import yaml
+from appdirs import *
 
 WORKING_DIR = os.path.join(os.path.dirname(
-    os.path.abspath(__file__)), '../data')
+    os.path.abspath(__file__)), '.')
 
-LOGGING_FILE = os.path.join(WORKING_DIR, 'logs/build.log')
-SESSION_FILE = os.path.join(WORKING_DIR, 'session/session.pkl')
-DEFAULT_CONFIG_FILE = 'conmato/default_config.yaml'
-USER_CONFIG_FILE = 'conmato/user_config.yaml'
+appname = "conmato"
+appauthor = "ngocjr7"
+LOGGING_DIR = user_log_dir(appname, appauthor)
+DATA_DIR = user_log_dir(appname, appauthor)
+CONFIG_DIR = user_config_dir(appname, appauthor)
+
+LOGGING_FILE = os.path.join(LOGGING_DIR, 'build.log')
+SESSION_FILE = os.path.join(DATA_DIR, 'session.pkl')
+DEFAULT_CONFIG_FILE = os.path.join(CONFIG_DIR, 'default_config.yaml')
+USER_CONFIG_FILE = os.path.join(CONFIG_DIR, 'user_config.yaml')
 
 # # USERID in moss.standford.edu, to register check https://theory.stanford.edu/~aiken/moss/
 # USERID = 203062946
@@ -36,9 +43,29 @@ USER_CONFIG_FILE = 'conmato/user_config.yaml'
 # USER_SECRET = '12872454ac44ec1bc0ada71a12bf186397ee7438'
 
 # GROUP_ID = 'Ir5CI6f3FD'
-
-with open(DEFAULT_CONFIG_FILE) as file:
-    config = yaml.full_load(file)
+try:
+    with open(DEFAULT_CONFIG_FILE) as file:
+        config = yaml.full_load(file)
+except FileNotFoundError:
+    config = {
+        'group_id': None,
+        'userid': 203062946,
+        'min_lines': 10,
+        'min_percent': 90,
+        'transformer': r'.*',
+        'new_score': -1,
+        'virtualization': True,
+        'user_format': r'^[0-9]{8,10}[A-Za-z]{4,10}$',
+        'timesleep': 1,
+        'default_username': '21431252KbjfGM',
+        'default_password': '4761032=<',
+        'user_key': '757e4de2c3d19ff5a823003bbfa108aaab96d834',
+        'user_secret': '12872454ac44ec1bc0ada71a12bf186397ee7438'
+    }
+    if not os.path.exists(CONFIG_DIR):
+        os.makedirs(CONFIG_DIR)
+    with open(DEFAULT_CONFIG_FILE, 'w') as file:
+        yaml.dump(config, file)
 GROUP_ID = config['group_id']
 USERID = config['userid']
 MIN_LINES = config['min_lines']
@@ -53,8 +80,15 @@ DEFAULT_PASSWORD = config['default_password']
 USER_KEY = config['user_key']
 USER_SECRET = config['user_secret']
 
-with open(USER_CONFIG_FILE) as file:
-    config = yaml.full_load(file)
+try:
+    with open(USER_CONFIG_FILE) as file:
+        config = yaml.full_load(file)
+except FileNotFoundError:
+    config = None
+    if not os.path.exists(CONFIG_DIR):
+        os.makedirs(CONFIG_DIR)
+    with open(USER_CONFIG_FILE, 'w') as file:
+        yaml.dump(config, file)
 if config:
     if 'group_id' in config:
         GROUP_ID = config['group_id']

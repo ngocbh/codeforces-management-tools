@@ -28,7 +28,7 @@ def cli():
 )
 @click.option(
     '--show', '-s', is_flag=True,
-    help="Show all parameters in user's config file."
+    help="Show all parameters in config files."
 )
 @click.option(
     '--group-id', '-g', default=None, 
@@ -111,12 +111,24 @@ def config(reset, show, group_id, min_lines, min_percent,
     # print('Successfully updated config file.')
 
     if show:
-        print("All parameters in user's config file:")
+        printed_paras = set()
+        print("All parameters in user config file:")
         if not config:
             print()
         else:
             for k, v in config.items():
                 print('{}: {}'.format(k, v))
+                printed_paras.add(k)
+        print('='*80)
+        print("All parameters in default config file:")
+        with open(DEFAULT_CONFIG_FILE) as file:
+            config = yaml.full_load(file) or {}
+        if not config:
+            print()
+        else:
+            for k, v in config.items():
+                if k not in printed_paras:
+                    print('{}: {}'.format(k, v))
 
 @cli.command('login', help='Login command.')
 @click.option(
@@ -408,7 +420,7 @@ def member(group_id, type, user_format, output_dir):
         sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
 
-    if type == None:
+    if not type:
         type = ('all',)
 
     if 'all' in type:
@@ -527,15 +539,15 @@ def standings(group_id, contest_id, user_format, common, output_dir):
     if common:
         standings = get_standings(contest_id, usernames=None, user_format=user_format)
         standing_df = standing_to_df(standings)
-        # if user_format != None:
-        #     standing_df = standing_df[standing_df['Who'].str.match(user_format)==True]
+        if user_format != None:
+            standing_df = standing_df[standing_df['Who'].str.match(user_format)==True]
     else:
         members = get_all_members(ss, group_id)
         members_df = to_df(members)
         members_df = members_df[members_df['pending']==False]
-        # if user_format != None:
-        #     members_df = members_df[members_df['username'].str.match(user_format)==True]
+        # print('members_df = ', members_df)
         standings = get_standings(contest_id, usernames=members_df['username'].to_list(), user_format=user_format)
+        # print('standings = ', standings)
         standing_df = standing_to_df(standings)
     
     if output_dir != None:

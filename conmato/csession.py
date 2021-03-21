@@ -92,12 +92,13 @@ class CSession(requests.Session):
                 ss = pickle.load(f)
             if ss.get_logged_username() != None:
                 return ss
-            # else:
-            #     print("Session time out! Please login again!", file=sys.stderr)
-        except (AttributeError, FileNotFoundError):
-            print("Session time out! Please login again!", file=sys.stderr)
+        except FileNotFoundError:
+            print("This command requires login! Please login first!", file=sys.stderr)
+        except AttributeError:
+            print("Session time out. Please login again.", file=sys.stderr)
         ss = CSession()
-        while True:
+        i = 0
+        while i < 5:
             username = input('Username: ')
             password = getpass('Password: ')
             status = ss.login(username, password)
@@ -105,4 +106,5 @@ class CSession(requests.Session):
                 print('Login failed! Please try again!')
             else:
                 break
+            i += 1
         return ss 

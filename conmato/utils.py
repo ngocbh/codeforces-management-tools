@@ -26,7 +26,8 @@ def create_dir(filepath):
             if exc.errno != errno.EEXIST:
                 raise Exception("something happends while creating folder")
 
-create_dir(os.path.join(WORKING_DIR,'logs/build.log'))
+create_dir(LOGGING_FILE)
+create_dir(DATA_DIR)
 
 logging.basicConfig(
     handlers=[
@@ -43,7 +44,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger('my_logger')
-
 
 def date_str():
     return datetime.datetime.today().strftime('%d-%m-%Y_%H%M%S')

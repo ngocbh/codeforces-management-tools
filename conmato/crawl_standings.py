@@ -94,12 +94,14 @@ def get_standings(contest_id, usernames=None, user_format=None):
         else:
             used_row['lastSubmissionTimeSeconds'] = 0
 
-        if user_format != None and re.match(user_format, used_row['handles']):
+        if user_format and re.match(user_format, used_row['handles']):
             if usernames != None:
                 if used_row['handles'].lower() in usernames:
                     standings['rows'].append(used_row)
             else:
                 standings['rows'].append(used_row)
+        else:
+            standings['rows'].append(used_row)
     # print(json.dumps(standings, indent=2))
     return standings
 

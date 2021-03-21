@@ -103,5 +103,5 @@ If you are interested in contributing this project, feel free to create pull req
 ## Acknowledgement 
 
 This project is sponsored and led by Prof. Do Phan Thuan, Hanoi University of Science and Technology.
-Thank Thai Do (Dec1mo) and Tung Tran (tungtran309) helping me to develop this project.
+Thank Thai Do (Dec1mo) and Tung Tran (tungtran309) for helping me to develop this project.
 

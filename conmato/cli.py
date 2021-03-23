@@ -264,6 +264,13 @@ def remove(group_id, input_file, user_format):
 
     if user_format != None:
         members_df = members_df[members_df['username'].str.match(user_format)==True]
+
+    if not input_file and not user_format:
+        print('You are about to delete all members in the group!!! Do you want to continue? [y/n]: ', end='')
+        ans = input()
+        if ans.strip().lower() != 'y':
+            return None
+
     print('Do you want to remove {} user(s)? [y/n]: '.format(len(members_df)), end='')
     ans = input()
     if ans.strip().lower() == 'y':
@@ -435,8 +442,9 @@ def member(group_id, type, user_format, output_dir):
         if 'pending' in type:
             pending_members = get_pending_participants(ss, group_id)
             pending_members_df = to_df(pending_members)
-            pending_members_df['role'] = 'pending'
-            pending_members_df.drop(columns={'csrf_token', 'groupRoleId', '_tta'}, inplace=True)
+            if len(pending_members_df) > 0:
+                pending_members_df['role'] = 'pending'
+                pending_members_df.drop(columns={'csrf_token', 'groupRoleId', '_tta'}, inplace=True)
 
         remaining_roles = set(type) - {'pending'}
         if remaining_roles:                 
@@ -539,17 +547,14 @@ def standings(group_id, contest_id, user_format, common, output_dir):
     if common:
         standings = get_standings(contest_id, usernames=None, user_format=user_format)
         standing_df = standing_to_df(standings)
-        if user_format != None:
-            standing_df = standing_df[standing_df['Who'].str.match(user_format)==True]
     else:
         members = get_all_members(ss, group_id)
         members_df = to_df(members)
         members_df = members_df[members_df['pending']==False]
-        # print('members_df = ', members_df)
-        standings = get_standings(contest_id, usernames=members_df['username'].to_list(), user_format=user_format)
-        # print('standings = ', standings)
+        standings = get_standings(contest_id, usernames=members_df['username'].to_list())
         standing_df = standing_to_df(standings)
-    
+    if user_format != None:
+        standing_df = standing_df[standing_df['Who'].str.match(user_format)==True].reset_index(drop=True)
     if output_dir != None:
         name = 'common' if common else group_id
         output_file = os.path.join(output_dir, 'standings_{}_{}.csv'.format(name, contest_id))

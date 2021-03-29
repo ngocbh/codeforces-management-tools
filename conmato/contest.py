@@ -60,34 +60,19 @@ def toggle_manager_mode(session, contest_id, group_id=GROUP_ID, mode='true'):
         "csrf_token": csrf_token,
         "contestId": contest_id,
         "newValue": mode,
-        # "action": 'toggleMashupContestManagerMode',
+        "action": 'toggleMashupContestManagerMode'
     }
-    headers = {}
-    # headers['Host'] = 'codeforces.com'
-    # headers['Accept-Encoding'] = 'gzip, deflate, br'
-    # headers['Connection'] = 'keep-alive'
 
-    headers['Accept'] = 'application/json, text/javascript, */*; q=0.01'
-    headers['X-Csrf-Token'] = csrf_token
-    headers['X-Requested-With'] = 'XMLHttpRequest'
-    headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36'
-    headers['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8'
-    headers['Sec-Fetch-Site'] = 'same-origin'
-    headers['Sec-Fetch-Mode'] = 'cors'
-    headers['Sec-Fetch-Dest'] = 'empty'
     response = session.post(
-        '{}/{}'.format(DATA_URL.format(group_id), 'mashup'),
-        headers=headers,
+        DATA_URL.format(group_id) + '/mashup',
         data=payload
     )
-    print('response.text = ', response.text)
-    if response.status_code == 200:
+    if response.status_code == 200 and response.text:
         return True
     else:
         logger.error(
             'toggle_manager_mode: an error while toggling manager mode')
         return False
-
 
 def get_managed_contests(session, group_id=GROUP_ID, mode='true'):
     '''

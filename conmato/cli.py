@@ -332,14 +332,25 @@ def manage(group_id, contest_id, mode):
         sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
 
-    if contest_id != None:
-        toggle_manager_mode(ss, contest_id, group_id, mode)
-        contest_ids = [contest_id]
+    if contest_id:
+        contests = [contest_id]
     else:
-        ret = get_managed_contests(ss, group_id, mode)
-        contest_ids = ret.keys()
-    for contest_id in contest_ids:
+        contests = list(get_contests(ss, group_id).keys())
+
+    success_contests = []
+    fail_contests = []
+    for contest_id in contests:
+        result_status = toggle_manager_mode(ss, contest_id, group_id, mode)
+        if result_status:
+            success_contests.append(contest_id)
+        else:
+            fail_contests.append(contest_id)
+
+    for contest_id in success_contests:
         print('Successfully changed manage mode at contest {} in group {}.'
+            .format(contest_id, group_id, mode))
+    for contest_id in fail_contests:
+        print('Failed to change manage mode at contest {} in group {}.'
             .format(contest_id, group_id, mode))
 
 # Plagiarism commands 

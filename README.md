@@ -98,7 +98,7 @@ For more detail, check this [doc](https://github.com/ngocjr7/codeforces-manageme
 
 This project is in development, if you find any issues, please create an issue [here](https://github.com/ngocjr7/codeforces-management-tools/issues).
 
-If you are interested in contributing this project, feel free to create pull request [here](https://github.com/ngocjr7/codeforces-management-tools/pulls). We appreciate any contribution in community.
+If you are interested in contributing this project, feel free to create pull request [here](https://github.com/ngocjr7/codeforces-management-tools/pulls). We appreciate all contributions.
 
 ## Acknowledgement 
 

@@ -9,6 +9,9 @@ from conmato.mossum import *
 from conmato.parameters import *
 from conmato.utils import *
 
+import scoss
+from scoss.html_template import SUMMARY_HTML
+
 import os
 import click
 import sys
@@ -16,6 +19,8 @@ import pickle
 import json
 import yaml
 from tqdm import tqdm
+from jinja2 import Environment
+import csv
 
 @click.group()
 def cli():
@@ -354,54 +359,74 @@ def manage(group_id, contest_id, mode):
             .format(contest_id, group_id, mode))
 
 # Plagiarism commands 
-@cli.group(help='Plagiarism commands.')
-def plagiarism():
-    pass
-
-@plagiarism.command('check', help='Check plagiarism.')
+@cli.command('plagiarism-check', help='Check plagiarism.')
 @click.option(
-    '--group-id', '-g',
-    help='Group id in Codeforces.com.'
-)
-@click.option(
-    '--contest-id', '-c', required=True,
-    help='Contest id in Codeforces.com.'
-)
-@click.option(
-    '--min-lines', '-ml', 
-    help='Min similar lines between two files.'
-)
-@click.option(
-    '--min-percent', '-mp', 
-    help='Min percent between two files.'
-)
-@click.option(
-    '--submission-dir', '-sd', required=True,
-    help='Submission directory (output dir from "get submission" command).'
+    '--input-dir', '-i', required=True,
+    help='Input directory.'
 )
 @click.option(
     '--output-dir', '-o', 
     help='Output directory.'
 )
-def check(group_id, contest_id, min_lines, min_percent, submission_dir, output_dir):
-    if not group_id and GROUP_ID:
-        group_id = GROUP_ID
-    if not group_id:
-        print("group-id not found in the command or config file.", file=sys.stderr)
-        sys.exit(-1)
-    if not min_lines and MIN_LINES:
-        min_lines = MIN_LINES
-    if not min_percent and MIN_PERCENT:
-        min_percent = MIN_PERCENT
+@click.option(
+    '--threshold-combination', '-tc', 
+    type=click.Choice(['AND','OR'], case_sensitive=False),
+    help='AND: All metrics are greater than threshold. OR: At least 1 metric is greater than threshold.'
+)
+@click.option(
+    '--moss', '-mo', type=click.FloatRange(0,1),
+    help='Use moss metric and set up moss threshold.'
+)
+@click.option(
+    '--count-operator', '-co', type=click.FloatRange(0,1),
+    help='Use count operator metric and set up count operator threshold.'
+)
+@click.option(
+    '--set-operator', '-so', type=click.FloatRange(0,1),
+    help='Use set operator metric and set up set operator threshold.'
+)
+@click.option(
+    '--hash-operator', '-ho', type=click.FloatRange(0,1),
+    help='Use hash operator metric and set up hash operator threshold.'
+)
+@click.option(
+    '--input-type', '-it', type=click.Choice(['contest','problem'], case_sensitive=False),
+    help='Input directory type. "problem" directory contains source code files. "contest" directory contains problems.'
+)
+def plagiarism_check(input_dir, output_dir, threshold_combination,\
+    moss, count_operator, set_operator, hash_operator, input_type):
     if not output_dir:
-        output_dir = './'
-    ss = CSession.load_session(SESSION_FILE)
+        output_dir = './plagiarism_report_{}/'.format(os.path.basename(os.path.normpath(input_dir)))
+    if not input_type:
+        input_type = 'problem'
+    if input_type == 'problem':
+        scoss.get_all_plagiarism(input_dir, output_dir, threshold_combination, 
+            moss, count_operator, set_operator, hash_operator)
+    elif input_type == 'contest':
+        all_links = []
+        all_heads = []
+        for file in os.listdir(input_dir):
+            d = os.path.join(input_dir, file)
+            if os.path.isdir(d):
+                links, heads = scoss.get_all_plagiarism(d, output_dir, threshold_combination, 
+                moss, count_operator, set_operator, hash_operator)
+                all_links += links
+                all_heads = heads
 
-    print("Checking plagiarism".format(contest_id, group_id))
-    check_plagiarism(ss, contest_id, submission_dir, group_id, min_lines, min_percent, True, output_dir)
-    outdir = os.path.join(output_dir, 'plagiarism_report_{}'.format(contest_id))
-    print("Successfully saved plagiarism checking report of contest {} of group {} in directory: {}.".\
-        format(contest_id, group_id, outdir))
+        all_links = sorted(all_links, key = lambda i: float(i['scores']['average_score'].split('">')[-1].split('%')[0]), reverse=True)
+        page = Environment().from_string(SUMMARY_HTML).render(heads=all_heads, links=all_links)
+        with open(os.path.join(output_dir, 'all_summary.html'), 'w') as file:
+            file.write(page)
+
+        with open(os.path.join(output_dir,'all_summary.csv'), mode='w', newline='') as f:
+            writer = csv.writer(f) 
+            writer.writerow(heads)
+            for link in all_links:
+                row = [link['source1'], link['source2']]
+                for k, v in link['scores'].items():
+                    row.append(v.split('">')[-1].split('%')[0]+'%')
+                writer.writerow(row)
+    print('Plagiarism checked successfully!')
 
 @cli.group(help='Get commands.')
 def get():

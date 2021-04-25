@@ -9,6 +9,9 @@ PROJECT_URLS = {
     'Source Code': 'https://github.com/ngocjr7/codeforces-management-tools'
 }
 
+with open('requirements.txt') as f:
+    install_requires = f.read().strip().split('\n')
+
 setup(name='conmato',
       description='A Command Line Interface for Codeforces Management Tools',
       author='Ngoc Bui',
@@ -16,11 +19,12 @@ setup(name='conmato',
       long_description_content_type="text/markdown",
       project_urls=PROJECT_URLS,
       author_email='ngocjr7@gmail.com',
-      version='0.0.2',
+      version='0.0.3',
       entry_points='''
         [console_scripts]
         conmato=conmato.cli:cli
       ''',
       packages=find_packages(),
+      install_requires=install_requires,
       python_requires='>=3.6')
 

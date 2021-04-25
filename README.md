@@ -1,14 +1,14 @@
 # Conmato
 
-A Command Line Interface (CLI) for Codeforces Management Tools that helps coach to 
-manage Codeforces group easier.
+A Command Line Interface (CLI) for Codeforces Management Tools that helps coaches to 
+manage Codeforces groups easier.
 
 ## Features
 
-* Managing member in a group (confirming or removing by Regex)
-* Managing contest in a group 
-* Crawling informations, standings, submission in a contest to csv format
-* Checking plagiarism in contest
+* Managing members in a group (confirming or removing by Regex)
+* Managing contests in a group 
+* Crawling informations, standings, submissions in a contest to csv format
+* Checking plagiarism in a contest
 
 To see more, check the following [docs](https://github.com/ngocjr7/codeforces-management-tools/tree/master/docs)
 
@@ -77,15 +77,15 @@ Options:
 --help                  Show this message and exit.
 ```
 
-Almost functions of conmato requires login before performing.
+Almost all functions of Conmato require a manager account logging in before performing.
 Usually, Conmato will ask on each action. 
-You can login once and save session for future usages by:
+You can log in once and save the session for future uses by:
 
 ```sh
 conmato login
 ```
 
-To get standings in a contest (e.x. `http://codeforces.com/group/Ir5CI6f3FD/contest/269185/standings/groupmates/true`), 
+For example, to get standings in a contest (e.x. `http://codeforces.com/group/Ir5CI6f3FD/contest/269185/standings/groupmates/true`), 
 you have to pass `group_id` (e.x. `Ir5CI6f3FD`) and `contest_id` (e.x. `269185`)
 
 ```sh
@@ -98,7 +98,7 @@ For more detail, check this [doc](https://github.com/ngocjr7/codeforces-manageme
 
 This project is in development, if you find any issues, please create an issue [here](https://github.com/ngocjr7/codeforces-management-tools/issues).
 
-If you are interested in contributing this project, feel free to create pull request [here](https://github.com/ngocjr7/codeforces-management-tools/pulls). We appreciate all contributions.
+If you are interested in contributing to this project, feel free to create a pull request [here](https://github.com/ngocjr7/codeforces-management-tools/pulls). We appreciate all your contributions.
 
 ## Acknowledgement 
 

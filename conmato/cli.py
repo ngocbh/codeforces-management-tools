@@ -9,6 +9,9 @@ from conmato.mossum import *
 from conmato.parameters import *
 from conmato.utils import *
 
+import scoss
+from scoss.html_template import SUMMARY_HTML
+
 import os
 import click
 import sys
@@ -16,6 +19,8 @@ import pickle
 import json
 import yaml
 from tqdm import tqdm
+from jinja2 import Environment
+import csv
 
 @click.group()
 def cli():
@@ -264,6 +269,13 @@ def remove(group_id, input_file, user_format):
 
     if user_format != None:
         members_df = members_df[members_df['username'].str.match(user_format)==True]
+
+    if not input_file and not user_format:
+        print('You are about to delete all members in the group!!! Do you want to continue? [y/n]: ', end='')
+        ans = input()
+        if ans.strip().lower() != 'y':
+            return None
+
     print('Do you want to remove {} user(s)? [y/n]: '.format(len(members_df)), end='')
     ans = input()
     if ans.strip().lower() == 'y':
@@ -325,65 +337,96 @@ def manage(group_id, contest_id, mode):
         sys.exit(-1)
     ss = CSession.load_session(SESSION_FILE)
 
-    if contest_id != None:
-        toggle_manager_mode(ss, contest_id, group_id, mode)
-        contest_ids = [contest_id]
+    if contest_id:
+        contests = [contest_id]
     else:
-        ret = get_managed_contests(ss, group_id, mode)
-        contest_ids = ret.keys()
-    for contest_id in contest_ids:
+        contests = list(get_contests(ss, group_id).keys())
+
+    success_contests = []
+    fail_contests = []
+    for contest_id in contests:
+        result_status = toggle_manager_mode(ss, contest_id, group_id, mode)
+        if result_status:
+            success_contests.append(contest_id)
+        else:
+            fail_contests.append(contest_id)
+
+    for contest_id in success_contests:
         print('Successfully changed manage mode at contest {} in group {}.'
+            .format(contest_id, group_id, mode))
+    for contest_id in fail_contests:
+        print('Failed to change manage mode at contest {} in group {}.'
             .format(contest_id, group_id, mode))
 
 # Plagiarism commands 
-@cli.group(help='Plagiarism commands.')
-def plagiarism():
-    pass
-
-@plagiarism.command('check', help='Check plagiarism.')
+@cli.command('plagiarism-check', help='Check plagiarism.')
 @click.option(
-    '--group-id', '-g',
-    help='Group id in Codeforces.com.'
-)
-@click.option(
-    '--contest-id', '-c', required=True,
-    help='Contest id in Codeforces.com.'
-)
-@click.option(
-    '--min-lines', '-ml', 
-    help='Min similar lines between two files.'
-)
-@click.option(
-    '--min-percent', '-mp', 
-    help='Min percent between two files.'
-)
-@click.option(
-    '--submission-dir', '-sd', required=True,
-    help='Submission directory (output dir from "get submission" command).'
+    '--input-dir', '-i', required=True,
+    help='Input directory.'
 )
 @click.option(
     '--output-dir', '-o', 
     help='Output directory.'
 )
-def check(group_id, contest_id, min_lines, min_percent, submission_dir, output_dir):
-    if not group_id and GROUP_ID:
-        group_id = GROUP_ID
-    if not group_id:
-        print("group-id not found in the command or config file.", file=sys.stderr)
-        sys.exit(-1)
-    if not min_lines and MIN_LINES:
-        min_lines = MIN_LINES
-    if not min_percent and MIN_PERCENT:
-        min_percent = MIN_PERCENT
+@click.option(
+    '--threshold-combination', '-tc', 
+    type=click.Choice(['AND','OR'], case_sensitive=False),
+    help='AND: All metrics are greater than threshold. OR: At least 1 metric is greater than threshold.'
+)
+@click.option(
+    '--moss', '-mo', type=click.FloatRange(0,1),
+    help='Use moss metric and set up moss threshold.'
+)
+@click.option(
+    '--count-operator', '-co', type=click.FloatRange(0,1),
+    help='Use count operator metric and set up count operator threshold.'
+)
+@click.option(
+    '--set-operator', '-so', type=click.FloatRange(0,1),
+    help='Use set operator metric and set up set operator threshold.'
+)
+@click.option(
+    '--hash-operator', '-ho', type=click.FloatRange(0,1),
+    help='Use hash operator metric and set up hash operator threshold.'
+)
+@click.option(
+    '--input-type', '-it', type=click.Choice(['contest','problem'], case_sensitive=False),
+    help='Input directory type. "problem" directory contains source code files. "contest" directory contains problems.'
+)
+def plagiarism_check(input_dir, output_dir, threshold_combination,\
+    moss, count_operator, set_operator, hash_operator, input_type):
     if not output_dir:
-        output_dir = './'
-    ss = CSession.load_session(SESSION_FILE)
+        output_dir = './plagiarism_report_{}/'.format(os.path.basename(os.path.normpath(input_dir)))
+    if not input_type:
+        input_type = 'problem'
+    if input_type == 'problem':
+        scoss.get_all_plagiarism(input_dir, output_dir, threshold_combination, 
+            moss, count_operator, set_operator, hash_operator)
+    elif input_type == 'contest':
+        all_links = []
+        all_heads = []
+        for file in os.listdir(input_dir):
+            d = os.path.join(input_dir, file)
+            if os.path.isdir(d):
+                links, heads = scoss.get_all_plagiarism(d, output_dir, threshold_combination, 
+                moss, count_operator, set_operator, hash_operator)
+                all_links += links
+                all_heads = heads
 
-    print("Checking plagiarism".format(contest_id, group_id))
-    check_plagiarism(ss, contest_id, submission_dir, group_id, min_lines, min_percent, True, output_dir)
-    outdir = os.path.join(output_dir, 'plagiarism_report_{}'.format(contest_id))
-    print("Successfully saved plagiarism checking report of contest {} of group {} in directory: {}.".\
-        format(contest_id, group_id, outdir))
+        all_links = sorted(all_links, key = lambda i: float(i['scores']['average_score'].split('">')[-1].split('%')[0]), reverse=True)
+        page = Environment().from_string(SUMMARY_HTML).render(heads=all_heads, links=all_links)
+        with open(os.path.join(output_dir, 'all_summary.html'), 'w') as file:
+            file.write(page)
+
+        with open(os.path.join(output_dir,'all_summary.csv'), mode='w', newline='') as f:
+            writer = csv.writer(f) 
+            writer.writerow(heads)
+            for link in all_links:
+                row = [link['source1'], link['source2']]
+                for k, v in link['scores'].items():
+                    row.append(v.split('">')[-1].split('%')[0]+'%')
+                writer.writerow(row)
+    print('Plagiarism checked successfully!')
 
 @cli.group(help='Get commands.')
 def get():
@@ -435,8 +478,9 @@ def member(group_id, type, user_format, output_dir):
         if 'pending' in type:
             pending_members = get_pending_participants(ss, group_id)
             pending_members_df = to_df(pending_members)
-            pending_members_df['role'] = 'pending'
-            pending_members_df.drop(columns={'csrf_token', 'groupRoleId', '_tta'}, inplace=True)
+            if len(pending_members_df) > 0:
+                pending_members_df['role'] = 'pending'
+                pending_members_df.drop(columns={'csrf_token', 'groupRoleId', '_tta'}, inplace=True)
 
         remaining_roles = set(type) - {'pending'}
         if remaining_roles:                 
@@ -539,17 +583,14 @@ def standings(group_id, contest_id, user_format, common, output_dir):
     if common:
         standings = get_standings(contest_id, usernames=None, user_format=user_format)
         standing_df = standing_to_df(standings)
-        if user_format != None:
-            standing_df = standing_df[standing_df['Who'].str.match(user_format)==True]
     else:
         members = get_all_members(ss, group_id)
         members_df = to_df(members)
         members_df = members_df[members_df['pending']==False]
-        # print('members_df = ', members_df)
-        standings = get_standings(contest_id, usernames=members_df['username'].to_list(), user_format=user_format)
-        # print('standings = ', standings)
+        standings = get_standings(contest_id, usernames=members_df['username'].to_list())
         standing_df = standing_to_df(standings)
-    
+    if user_format != None:
+        standing_df = standing_df[standing_df['Who'].str.match(user_format)==True].reset_index(drop=True)
     if output_dir != None:
         name = 'common' if common else group_id
         output_file = os.path.join(output_dir, 'standings_{}_{}.csv'.format(name, contest_id))

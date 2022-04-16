@@ -271,18 +271,20 @@ def remove(group_id, input_file, user_format):
         members_df = members_df[members_df['username'].str.match(user_format)==True]
 
     if not input_file and not user_format:
-        print('You are about to delete all members in the group!!! Do you want to continue? [y/n]: ', end='')
+        print('You are about to delete all members that are not managers or pending in the group!!!'
+            + '\nDo you want to continue? [y/n]: ', end='')
         ans = input()
         if ans.strip().lower() != 'y':
             return None
 
-    print('Do you want to remove {} user(s)? [y/n]: '.format(len(members_df)), end='')
+    members = members_df.to_dict('records')
+    members_to_remove = [m for m in members if m['role'] != 'manager' and not m['pending']]
+    print('Do you want to remove {} user(s)? [y/n]: '.format(len(members_to_remove)), end='')
     ans = input()
     if ans.strip().lower() == 'y':
-        members = members_df.to_dict('records')
-        for member in tqdm(members, desc='Removing member(s)', unit=' members'):
+        for member in tqdm(members_to_remove, desc='Removing member(s)', unit=' members'):
             remove_participants(ss, member, group_id)
-        print('Successfully removed {} user(s)'.format(len(members_df)))
+        print('Successfully removed {} user(s)'.format(len(members_to_remove)))
 
 # Contest commands 
 @cli.group(help='Contest commands.')

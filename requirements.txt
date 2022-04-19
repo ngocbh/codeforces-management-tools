@@ -8,7 +8,7 @@ mosspy
 numpy
 pandas
 pydot
-pyparsin
+pyparsing
 pyquery
 python-dateutil
 pytz

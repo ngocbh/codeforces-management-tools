@@ -15,6 +15,8 @@ import codecs
 import random
 import time
 from tqdm import tqdm
+from lxml.html import html5parser as etree
+
 
 def get_contest_name(session, contest_id, group_id=GROUP_ID):
     if not contest_id.isnumeric():
@@ -29,7 +31,7 @@ def get_contest_name(session, contest_id, group_id=GROUP_ID):
 
 def get_contests(session, group_id=GROUP_ID):
     '''
-            usage:	session = conmato.CSession()
+            usage:  session = conmato.CSession()
                     conmato.get_contests(session)
             return:
                     a dictionary of contest_id as key and contest_name as value
@@ -77,7 +79,7 @@ def toggle_manager_mode(session, contest_id, group_id=GROUP_ID, mode='true'):
 def get_managed_contests(session, group_id=GROUP_ID, mode='true'):
     '''
             get contests and toggle manager mode for all contest
-            usage:	session = conmato.CSession()
+            usage:  session = conmato.CSession()
                             conmato.get_managed_contests(session)
             return:
                             a dictionary of contest_id as key and contestname as value
@@ -134,7 +136,9 @@ def get_score(data):
 
 def get_code(session, data):
     # submission_url = 'https://codeforces.com/group/Ir5CI6f3FD/contest/255647/submission/62598185'
+
     submission_url = '{}{}'.format(CODEFORCES_URI, data('a').attr['href'])
+
 
     try:
         response = session.get(submission_url)
@@ -146,12 +150,13 @@ def get_code(session, data):
     tree2 = html.fromstring(response.text)
     doc = pq(response.text)
     try:
-        pq(tree2.xpath('//*[@id="pageContent"]/div[3]/pre'))
-        code = tree2.xpath('//*[@id="pageContent"]/div[3]/pre/text()')[0]
-        return code
+        #New extract code method
+        data = etree.fromstring(str(pq(tree2.xpath('//*[@id=\"program-source-text\"]')))).text
+        data = data.replace("<pre id=\"program-source-text\" class=\"prettyprint lang-cpp linenums program-source\" style=\"padding: 0.5em;\">","")
+        return data
     except:
         raise Exception(
-            'Too many requests, Codeforces has rejected requests, please increase TIMESLEEP parameter in parameters.py file')
+            'Problem with code extract')
 
 def get_next_page(document):
     page_links = []
@@ -225,7 +230,7 @@ def get_all_submission(session, url, output_dir, group_id=GROUP_ID, page=1, user
                     sleep_duration = random.uniform(
                         float(TIMESLEEP) / 2, TIMESLEEP)
                     time.sleep(sleep_duration)
-
+                    
     logger.info("Downloaded submissions in {}".format(url))
     sleep_duration = random.uniform(float(TIMESLEEP) / 2, TIMESLEEP)
     logger.info(

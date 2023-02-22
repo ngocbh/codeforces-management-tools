@@ -19,7 +19,7 @@ setup(name='conmato',
       long_description_content_type="text/markdown",
       project_urls=PROJECT_URLS,
       author_email='ngocjr7@gmail.com',
-      version='0.0.3',
+      version='0.0.5',
       entry_points='''
         [console_scripts]
         conmato=conmato.cli:cli
